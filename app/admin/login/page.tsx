@@ -12,6 +12,7 @@ export default function AdminLoginPage() {
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
     if (username === 'lazyjam' && password === 'lazyjam2024') {
+      sessionStorage.setItem('lazyjam_admin_auth', 'true');
       router.push('/admin');
     } else {
       setError('用户名或密码错误');
