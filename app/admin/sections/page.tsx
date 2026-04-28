@@ -1,26 +1,26 @@
-"use client";
+'use client';
 
-import { useEffect, useState } from "react";
-import { apiRequest } from "@/lib/client-api";
-import type { Section } from "@/lib/types";
+import { useEffect, useState } from 'react';
+import { apiRequest } from '@/lib/client-api';
+import type { Section } from '@/lib/types';
 
 export default function AdminSectionsPage() {
   const [sections, setSections] = useState<Section[]>([]);
-  const [statusFilter, setStatusFilter] = useState("all");
+  const [statusFilter, setStatusFilter] = useState('all');
   const [modal, setModal] = useState<Section | null>(null);
-  const [toast, setToast] = useState("");
+  const [toast, setToast] = useState('');
 
   useEffect(() => {
-    apiRequest<Section[]>("/api/sections").then(setSections);
+    apiRequest<Section[]>('/api/sections').then(setSections);
   }, []);
 
   const showToast = (msg: string) => {
     setToast(msg);
-    setTimeout(() => setToast(""), 2200);
+    setTimeout(() => setToast(''), 2200);
   };
 
   const filtered = sections
-    .filter((s) => statusFilter === "all" || s.status === statusFilter)
+    .filter((s) => statusFilter === 'all' || (statusFilter === 'active' ? s.isActive : !s.isActive))
     .sort((a, b) => a.order - b.order);
 
   const handleSave = (payload: Partial<Section>) => {
@@ -29,7 +29,7 @@ export default function AdminSectionsPage() {
       prev.map((s) => (s.id === modal.id ? { ...s, ...payload } : s))
     );
     setModal(null);
-    showToast("板块配置已保存");
+    showToast('板块配置已保存');
   };
 
   return (
@@ -60,8 +60,8 @@ export default function AdminSectionsPage() {
                 <h2 className="section-title" style={{ margin: 0, fontFamily: "'Cormorant Garamond',Georgia,serif", fontSize: 25, lineHeight: 1.05 }}>
                   {section.title}
                 </h2>
-                <span className={`status-badge status-${section.status === "active" ? "active" : "hidden"}`}>
-                  {section.status === "active" ? "显示中" : "已隐藏"}
+                <span className={`status-badge status-${section.isActive ? 'active' : 'hidden'}`}>
+                  {section.isActive ? '显示中' : '已隐藏'}
                 </span>
               </div>
               <p className="section-meta">
@@ -160,11 +160,11 @@ function SectionModal({
 }) {
   const [url, setUrl] = useState(section.href);
   const [order, setOrder] = useState(section.order);
-  const [status, setStatus] = useState<"active" | "hidden">(section.status);
+  const [isActive, setIsActive] = useState(section.isActive);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    onSave({ href: url, order: Number(order), status });
+    onSave({ href: url, order: Number(order), isActive });
   };
 
   return (
@@ -178,11 +178,11 @@ function SectionModal({
           <div className="modal-body">
             <div style={{ marginBottom: 14 }}>
               <p className="admin-label" style={{ marginBottom: 8 }}>当前背景图</p>
-              <div className="admin-thumb" style={{ width: "100%", height: 180, borderRadius: 6 }}>
-                <img src={section.imageUrl} alt={section.title} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+              <div className="admin-thumb" style={{ width: '100%', height: 180, borderRadius: 6 }}>
+                <img src={section.imageUrl} alt={section.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
               </div>
             </div>
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 14 }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 14 }}>
               <div className="field">
                 <label className="admin-label">链接 URL</label>
                 <input className="admin-input" value={url} onChange={(e) => setUrl(e.target.value)} />
@@ -193,7 +193,7 @@ function SectionModal({
               </div>
               <div className="field">
                 <label className="admin-label">状态</label>
-                <select className="admin-select" value={status} onChange={(e) => setStatus(e.target.value as "active" | "hidden")}>
+                <select className="admin-select" value={isActive ? 'active' : 'hidden'} onChange={(e) => setIsActive(e.target.value === 'active')}>
                   <option value="active">显示中</option>
                   <option value="hidden">已隐藏</option>
                 </select>
