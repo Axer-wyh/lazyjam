@@ -13,6 +13,13 @@ const emptyProduct: Omit<Product, "id" | "createdAt"> = {
   materials: [],
   inventory: 0,
   featured: false,
+  stockTag: "Small Batch",
+  cycle: "5-7 days",
+  material: "",
+  size: "",
+  care: "",
+  note: "",
+  tags: [],
   status: "draft"
 };
 
