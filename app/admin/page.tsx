@@ -17,7 +17,7 @@ export default function AdminDashboard() {
       apiRequest<Product[]>("/api/products"),
       apiRequest<Order[]>("/api/orders"),
     ]).then(([config, products, orderData]) => {
-      setPagesCount(config.pages?.length ?? 0);
+      setPagesCount((config as { pages?: unknown[] }).pages?.length ?? 0);
       setProductsCount(products.length);
       setOrdersCount(orderData.length);
       setOrders(orderData.slice(0, 5));

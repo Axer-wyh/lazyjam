@@ -2,35 +2,17 @@
 
 import { useEffect, useState } from "react";
 import { apiRequest } from "@/lib/client-api";
-
-type Page = {
-  id: number;
-  name: string;
-  path: string;
-  status: "draft" | "published";
-  updated: string;
-};
-
-const stockClass: Record<string, string> = {
-  "Small Batch": "small-batch",
-  "Made to Order": "made-order",
-  "One of a Kind": "one-kind",
-  "Sold Out": "sold-out",
-};
-
-const statusClass: Record<string, string> = {
-  draft: "draft",
-  published: "published",
-};
+import type { SiteConfig, PageConfig } from "@/lib/types";
 
 export default function AdminPagesPage() {
-  const [pages, setPages] = useState<Page[]>([]);
+  const [config, setConfig] = useState<SiteConfig | null>(null);
   const [statusFilter, setStatusFilter] = useState("all");
-  const [modal, setModal] = useState<{ page: Page | null; isNew: boolean } | null>(null);
+  const [modal, setModal] = useState<{ page: PageConfig | null; isNew: boolean } | null>(null);
   const [toast, setToast] = useState("");
+  const [saving, setSaving] = useState(false);
 
   useEffect(() => {
-    apiRequest<{ pages: Page[] }>("/api/pages").then((d) => setPages(d.pages ?? []));
+    apiRequest<SiteConfig>("/api/pages").then(setConfig);
   }, []);
 
   const showToast = (msg: string) => {
@@ -38,27 +20,50 @@ export default function AdminPagesPage() {
     setTimeout(() => setToast(""), 2200);
   };
 
-  const filtered = pages.filter(
+  const filtered = (config?.pages ?? []).filter(
     (p) => statusFilter === "all" || p.status === statusFilter
   );
 
-  const handleSave = (payload: Partial<Page> & { name: string; path: string; status: "draft" | "published" }) => {
-    if (modal?.isNew) {
-      setPages((prev) => [
-        { id: Date.now(), ...payload, updated: new Date().toISOString().slice(0, 16).replace("T", " ") },
-        ...prev,
-      ]);
-    } else if (modal?.page) {
-      setPages((prev) =>
-        prev.map((p) =>
-          p.id === modal.page!.id
-            ? { ...p, ...payload, updated: new Date().toISOString().slice(0, 16).replace("T", " ") }
+  const handleSave = async (payload: Partial<PageConfig> & { slug: string; title: string }) => {
+    if (!config) return;
+    setSaving(true);
+    try {
+      let nextPages: PageConfig[];
+      if (modal?.isNew) {
+        nextPages = [
+          {
+            slug: payload.slug,
+            title: payload.title,
+            eyebrow: payload.eyebrow ?? "",
+            description: payload.description ?? "",
+            updatedAt: new Date().toISOString(),
+          },
+          ...config.pages,
+        ];
+      } else if (modal?.page) {
+        nextPages = config.pages.map((p) =>
+          p.slug === modal.page!.slug
+            ? { ...p, ...payload, updatedAt: new Date().toISOString() }
             : p
-        )
-      );
+        );
+      } else {
+        setModal(null);
+        setSaving(false);
+        return;
+      }
+      const nextConfig: SiteConfig = { ...config, pages: nextPages };
+      await apiRequest<SiteConfig>("/api/pages", {
+        method: "PUT",
+        body: JSON.stringify(nextConfig),
+      });
+      setConfig(nextConfig);
+      setModal(null);
+      showToast("页面已保存");
+    } catch {
+      showToast("保存失败，请重试");
+    } finally {
+      setSaving(false);
     }
-    setModal(null);
-    showToast("页面已保存");
   };
 
   return (
@@ -86,8 +91,8 @@ export default function AdminPagesPage() {
           <thead>
             <tr>
               <th>页面名称</th>
-              <th>路径</th>
-              <th>状态</th>
+              <th>Slug</th>
+              <th>描述</th>
               <th>更新时间</th>
               <th>操作</th>
             </tr>
@@ -101,15 +106,11 @@ export default function AdminPagesPage() {
               </tr>
             )}
             {filtered.map((page) => (
-              <tr key={page.id}>
-                <td style={{ fontWeight: 700 }}>{page.name}</td>
-                <td style={{ color: "var(--weathered-taupe)", fontFamily: "monospace", fontSize: 13 }}>{page.path}</td>
-                <td>
-                  <span className={`status-badge status-${statusClass[page.status] ?? page.status}`}>
-                    {page.status === "published" ? "已发布" : "草稿"}
-                  </span>
-                </td>
-                <td>{page.updated}</td>
+              <tr key={page.slug}>
+                <td style={{ fontWeight: 700 }}>{page.title}</td>
+                <td style={{ color: "var(--weathered-taupe)", fontFamily: "monospace", fontSize: 13 }}>{page.slug}</td>
+                <td style={{ maxWidth: 260, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{page.description}</td>
+                <td>{page.updatedAt?.split("T")[0] ?? page.updatedAt}</td>
                 <td>
                   <button
                     className="admin-btn admin-btn-ghost"
@@ -117,18 +118,6 @@ export default function AdminPagesPage() {
                     onClick={() => setModal({ page, isNew: false })}
                   >
                     编辑
-                  </button>
-                  <button
-                    className="admin-btn admin-btn-ghost admin-btn-danger"
-                    type="button"
-                    onClick={() => {
-                      if (confirm("确认删除这个页面？")) {
-                        setPages((p) => p.filter((x) => x.id !== page.id));
-                        showToast("页面已删除");
-                      }
-                    }}
-                  >
-                    删除
                   </button>
                 </td>
               </tr>
@@ -143,6 +132,7 @@ export default function AdminPagesPage() {
           isNew={modal.isNew}
           onClose={() => setModal(null)}
           onSave={handleSave}
+          saving={saving}
         />
       )}
 
@@ -172,23 +162,22 @@ function PageModal({
   isNew,
   onClose,
   onSave,
+  saving,
 }: {
-  page: Page | null;
+  page: PageConfig | null;
   isNew: boolean;
   onClose: () => void;
-  onSave: (p: Partial<Page> & { name: string; path: string; status: "draft" | "published" }) => void;
+  onSave: (p: Partial<PageConfig> & { slug: string; title: string }) => void;
+  saving?: boolean;
 }) {
-  const [name, setName] = useState(page?.name ?? "");
-  const [path, setPath] = useState(page?.path ?? "/");
-  const [status, setStatus] = useState<"draft" | "published">(page?.status ?? "draft");
+  const [slug, setSlug] = useState(page?.slug ?? "");
+  const [title, setTitle] = useState(page?.title ?? "");
+  const [eyebrow, setEyebrow] = useState(page?.eyebrow ?? "");
+  const [description, setDescription] = useState(page?.description ?? "");
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!path.startsWith("/")) {
-      alert("路径必须以 / 开头");
-      return;
-    }
-    onSave({ name, path, status });
+    onSave({ slug, title, eyebrow, description });
   };
 
   return (
@@ -202,25 +191,26 @@ function PageModal({
           <div className="modal-body">
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
               <div className="field">
-                <label className="admin-label">页面名称</label>
-                <input className="admin-input" value={name} onChange={(e) => setName(e.target.value)} required />
+                <label className="admin-label">Slug</label>
+                <input className="admin-input" value={slug} onChange={(e) => setSlug(e.target.value)} required={isNew} disabled={!isNew} />
               </div>
               <div className="field">
-                <label className="admin-label">路径</label>
-                <input className="admin-input" value={path} onChange={(e) => setPath(e.target.value)} required />
+                <label className="admin-label">页面标题</label>
+                <input className="admin-input" value={title} onChange={(e) => setTitle(e.target.value)} required />
               </div>
-              <div className="field">
-                <label className="admin-label">状态</label>
-                <select className="admin-select" value={status} onChange={(e) => setStatus(e.target.value as "draft" | "published")}>
-                  <option value="draft">草稿</option>
-                  <option value="published">已发布</option>
-                </select>
+              <div className="field" style={{ gridColumn: "1/-1" }}>
+                <label className="admin-label">Eyebrow（小标题）</label>
+                <input className="admin-input" value={eyebrow} onChange={(e) => setEyebrow(e.target.value)} />
+              </div>
+              <div className="field" style={{ gridColumn: "1/-1" }}>
+                <label className="admin-label">描述</label>
+                <textarea className="admin-textarea" value={description} onChange={(e) => setDescription(e.target.value)} rows={3} />
               </div>
             </div>
           </div>
           <div className="modal-footer">
             <button className="admin-btn admin-btn-secondary" type="button" onClick={onClose}>取消</button>
-            <button className="admin-btn" type="submit">保存页面</button>
+            <button className="admin-btn" type="submit" disabled={saving}>{saving ? "保存中..." : "保存页面"}</button>
           </div>
         </form>
       </div>

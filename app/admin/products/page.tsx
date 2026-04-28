@@ -19,6 +19,7 @@ export default function AdminProductsPage() {
   const [stockFilter, setStockFilter] = useState("all");
   const [modal, setModal] = useState<{ product: Product | null; isNew: boolean } | null>(null);
   const [toast, setToast] = useState("");
+  const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     apiRequest<Product[]>("/api/products").then(setProducts);
@@ -33,46 +34,44 @@ export default function AdminProductsPage() {
     .filter((p) => categoryFilter === "all" || p.category === categoryFilter)
     .filter((p) => stockFilter === "all" || p.stockTag === stockFilter);
 
-  const handleSave = (payload: Partial<Product>) => {
-    if (modal?.isNew) {
-      setProducts((prev) => [
-        {
-          ...prev[0],
-          id: String(Date.now()),
-          name: "",
-          category: "Clay Earrings",
-          price: 0,
-          imageUrl: "https://images.unsplash.com/photo-1606760227091-3dd870d97f1d?auto=format&fit=crop&w=900&q=80",
-          description: "",
-          materials: [],
-          inventory: 0,
-          featured: false,
-          status: "draft",
-          stockTag: "Small Batch",
-          cycle: "5-7 days",
-          material: "",
-          size: "",
-          care: "",
-          note: "",
-          tags: [],
-          createdAt: new Date().toISOString(),
-          ...payload,
-        },
-        ...prev,
-      ]);
-    } else if (modal?.product) {
-      setProducts((prev) =>
-        prev.map((p) => (p.id === modal.product!.id ? { ...p, ...payload } : p))
-      );
+  const handleSave = async (payload: Partial<Product>) => {
+    if (!modal) return;
+    setSaving(true);
+    try {
+      if (modal.isNew) {
+        const saved = await apiRequest<Product[]>("/api/products", {
+          method: "POST",
+          body: JSON.stringify(payload),
+        });
+        setProducts(saved);
+      } else {
+        const updated = { ...modal.product!, ...payload };
+        const saved = await apiRequest<Product[]>("/api/products", {
+          method: "PUT",
+          body: JSON.stringify(updated),
+        });
+        setProducts(saved);
+      }
+      setModal(null);
+      showToast("商品已保存");
+    } catch {
+      showToast("保存失败，请重试");
+    } finally {
+      setSaving(false);
     }
-    setModal(null);
-    showToast("商品已保存");
   };
 
-  const handleDelete = (id: string) => {
+  const handleDelete = async (id: string) => {
     if (!confirm("确认删除这个商品？")) return;
-    setProducts((p) => p.filter((x) => x.id !== id));
-    showToast("商品已删除");
+    try {
+      const saved = await apiRequest<Product[]>("/api/products?id=" + id, {
+        method: "DELETE",
+      });
+      setProducts(saved);
+      showToast("商品已删除");
+    } catch {
+      showToast("删除失败，请重试");
+    }
   };
 
   return (
@@ -129,7 +128,7 @@ export default function AdminProductsPage() {
                     </div>
                   </div>
                 </td>
-                <td>${product.price}</td>
+                <td>¥{product.price}</td>
                 <td>
                   <span className={`status-badge status-${stockClass[product.stockTag] ?? product.stockTag}`}>
                     {product.stockTag}
@@ -156,6 +155,7 @@ export default function AdminProductsPage() {
           isNew={modal.isNew}
           onClose={() => setModal(null)}
           onSave={handleSave}
+          saving={saving}
         />
       )}
 
@@ -181,17 +181,19 @@ function ProductModal({
   isNew,
   onClose,
   onSave,
+  saving,
 }: {
   product: Product | null;
   isNew: boolean;
   onClose: () => void;
   onSave: (p: Partial<Product>) => void;
+  saving?: boolean;
 }) {
   const [name, setName] = useState(product?.name ?? "");
   const [category, setCategory] = useState(product?.category ?? "Clay Earrings");
   const [price, setPrice] = useState(product?.price ?? 0);
   const [stockTag, setStockTag] = useState(product?.stockTag ?? "Small Batch");
-  const [status, setStatus] = useState(product?.status ?? "draft");
+  const [status, setStatus] = useState<Product["status"]>(product?.status ?? "draft");
   const [inventory, setInventory] = useState(product?.inventory ?? 0);
   const [cycle, setCycle] = useState(product?.cycle ?? "5-7 days");
   const [material, setMaterial] = useState(product?.material ?? "");
@@ -199,13 +201,35 @@ function ProductModal({
   const [care, setCare] = useState(product?.care ?? "");
   const [note, setNote] = useState(product?.note ?? "");
   const [tags, setTags] = useState<string[]>(product?.tags ?? []);
+  const [imageUrl, setImageUrl] = useState(product?.imageUrl ?? "");
+  const [description, setDescription] = useState(product?.description ?? "");
+  const [materialsInput, setMaterialsInput] = useState(product?.materials?.join(", ") ?? "");
+  const [featured, setFeatured] = useState(product?.featured ?? false);
 
   const toggleTag = (tag: string) =>
     setTags((prev) => (prev.includes(tag) ? prev.filter((t) => t !== tag) : [...prev, tag]));
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    onSave({ name, category, price, stockTag, status, inventory, cycle, material, size, care, note, tags });
+    const payload: Partial<Product> = {
+      name,
+      category,
+      price: Number(price),
+      stockTag: stockTag as Product["stockTag"],
+      status,
+      inventory: Number(inventory),
+      cycle,
+      material,
+      size,
+      care,
+      note,
+      tags,
+      imageUrl,
+      description,
+      materials: materialsInput.split(",").map((m) => m.trim()).filter(Boolean),
+      featured,
+    };
+    onSave(payload);
   };
 
   const fieldStyle = { display: "grid", gap: 7 };
@@ -219,6 +243,23 @@ function ProductModal({
         </div>
         <form onSubmit={handleSubmit}>
           <div className="modal-body">
+            {/* Image preview + URL input */}
+            <div style={{ marginBottom: 14 }}>
+              <p className="admin-label" style={{ marginBottom: 8 }}>商品图片</p>
+              {imageUrl && (
+                <div className="admin-thumb" style={{ width: 120, height: 120, marginBottom: 8, borderRadius: 6, overflow: "hidden" }}>
+                  <img src={imageUrl} alt={name} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                </div>
+              )}
+              <input
+                className="admin-input"
+                value={imageUrl}
+                onChange={(e) => setImageUrl(e.target.value)}
+                placeholder="粘贴图片 URL https://images.unsplash.com/..."
+                style={{ width: "100%" }}
+              />
+            </div>
+
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
               <div className="field" style={fieldStyle}>
                 <label className="admin-label">商品名称</label>
@@ -237,7 +278,7 @@ function ProductModal({
                 <input className="admin-input" type="number" min={0} value={price} onChange={(e) => setPrice(Number(e.target.value))} />
               </div>
               <div className="field" style={fieldStyle}>
-                <label className="admin-label">库存</label>
+                <label className="admin-label">库存数量</label>
                 <input className="admin-input" type="number" min={0} value={inventory} onChange={(e) => setInventory(Number(e.target.value))} />
               </div>
               <div className="field" style={fieldStyle}>
@@ -255,13 +296,28 @@ function ProductModal({
               <div className="field" style={fieldStyle}>
                 <label className="admin-label">状态</label>
                 <select className="admin-select" value={status} onChange={(e) => setStatus(e.target.value as Product["status"])}>
-                  {["已上架", "草稿", "售罄展示"].map((s) => (
-                    <option key={s} value={s}>{s}</option>
-                  ))}
+                  <option value="active">上架</option>
+                  <option value="draft">草稿</option>
+                  <option value="sold_out">售罄</option>
+                </select>
+              </div>
+              <div className="field" style={fieldStyle}>
+                <label className="admin-label">精选商品</label>
+                <select className="admin-select" value={featured ? "true" : "false"} onChange={(e) => setFeatured(e.target.value === "true")}>
+                  <option value="true">是</option>
+                  <option value="false">否</option>
                 </select>
               </div>
               <div className="field" style={{ gridColumn: "1/-1", display: "grid", gap: 7 }}>
-                <label className="admin-label">材质</label>
+                <label className="admin-label">商品描述</label>
+                <textarea className="admin-textarea" value={description} onChange={(e) => setDescription(e.target.value)} rows={3} />
+              </div>
+              <div className="field" style={{ gridColumn: "1/-1", display: "grid", gap: 7 }}>
+                <label className="admin-label">材质（用逗号分隔）</label>
+                <input className="admin-input" value={materialsInput} onChange={(e) => setMaterialsInput(e.target.value)} placeholder="Polymer clay, brass post" />
+              </div>
+              <div className="field" style={{ gridColumn: "1/-1", display: "grid", gap: 7 }}>
+                <label className="admin-label">材质详情</label>
                 <textarea className="admin-textarea" value={material} onChange={(e) => setMaterial(e.target.value)} />
               </div>
               <div className="field" style={{ gridColumn: "1/-1", display: "grid", gap: 7 }}>
@@ -296,7 +352,7 @@ function ProductModal({
           </div>
           <div className="modal-footer">
             <button className="admin-btn admin-btn-secondary" type="button" onClick={onClose}>取消</button>
-            <button className="admin-btn" type="submit">保存商品</button>
+            <button className="admin-btn" type="submit" disabled={saving}>{saving ? "保存中..." : "保存商品"}</button>
           </div>
         </form>
       </div>

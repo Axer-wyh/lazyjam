@@ -4,10 +4,11 @@ type ProductCardProps = {
   product: Product;
 };
 
-const categoryLabel: Record<Product["category"], string> = {
-  clay: "粘土手作",
-  beads: "串珠首饰",
-  mixed: "混合材质"
+const categoryLabel: Record<string, string> = {
+  "Clay Earrings": "粘土手作",
+  "Bead Necklace": "串珠首饰",
+  "Bracelet": "手绑",
+  "Mixed Pair": "混合材质"
 };
 
 export default function ProductCard({ product }: ProductCardProps) {

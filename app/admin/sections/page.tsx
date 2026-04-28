@@ -9,6 +9,7 @@ export default function AdminSectionsPage() {
   const [statusFilter, setStatusFilter] = useState('all');
   const [modal, setModal] = useState<Section | null>(null);
   const [toast, setToast] = useState('');
+  const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     apiRequest<Section[]>('/api/sections').then(setSections);
@@ -23,13 +24,24 @@ export default function AdminSectionsPage() {
     .filter((s) => statusFilter === 'all' || (statusFilter === 'active' ? s.isActive : !s.isActive))
     .sort((a, b) => a.order - b.order);
 
-  const handleSave = (payload: Partial<Section>) => {
+  const handleSave = async (payload: Partial<Section>) => {
     if (!modal) return;
-    setSections((prev) =>
-      prev.map((s) => (s.id === modal.id ? { ...s, ...payload } : s))
-    );
-    setModal(null);
-    showToast('板块配置已保存');
+    setSaving(true);
+    try {
+      const updated: Section = { ...modal, ...payload };
+      const nextSections = sections.map((s) => (s.id === modal.id ? updated : s));
+      await apiRequest<Section[]>('/api/sections', {
+        method: 'PUT',
+        body: JSON.stringify(nextSections),
+      });
+      setSections(nextSections);
+      setModal(null);
+      showToast('板块配置已保存');
+    } catch {
+      showToast('保存失败，请重试');
+    } finally {
+      setSaving(false);
+    }
   };
 
   return (
@@ -86,6 +98,7 @@ export default function AdminSectionsPage() {
           section={modal}
           onClose={() => setModal(null)}
           onSave={handleSave}
+          saving={saving}
         />
       )}
 
@@ -153,23 +166,30 @@ function SectionModal({
   section,
   onClose,
   onSave,
+  saving,
 }: {
   section: Section;
   onClose: () => void;
   onSave: (p: Partial<Section>) => void;
+  saving?: boolean;
 }) {
-  const [url, setUrl] = useState(section.href);
+  const [title, setTitle] = useState(section.title);
+  const [subtitle, setSubtitle] = useState(section.subtitle);
+  const [description, setDescription] = useState(section.description);
+  const [imageUrl, setImageUrl] = useState(section.imageUrl);
+  const [href, setHref] = useState(section.href);
+  const [ctaLabel, setCtaLabel] = useState(section.ctaLabel);
   const [order, setOrder] = useState(section.order);
   const [isActive, setIsActive] = useState(section.isActive);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    onSave({ href: url, order: Number(order), isActive });
+    onSave({ title, subtitle, description, imageUrl, href, ctaLabel, order: Number(order), isActive });
   };
 
   return (
     <div className="modal-overlay is-open" onClick={(e) => e.target === e.currentTarget && onClose()}>
-      <div className="modal">
+      <div className="modal large">
         <div className="modal-header">
           <h2 className="modal-title">编辑 {section.title}</h2>
           <button className="modal-close" type="button" onClick={onClose}>×</button>
@@ -179,13 +199,33 @@ function SectionModal({
             <div style={{ marginBottom: 14 }}>
               <p className="admin-label" style={{ marginBottom: 8 }}>当前背景图</p>
               <div className="admin-thumb" style={{ width: '100%', height: 180, borderRadius: 6 }}>
-                <img src={section.imageUrl} alt={section.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                <img src={imageUrl} alt={title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
               </div>
             </div>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 14 }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
+              <div className="field" style={{ gridColumn: '1/-1' }}>
+                <label className="admin-label">板块标题</label>
+                <input className="admin-input" value={title} onChange={(e) => setTitle(e.target.value)} />
+              </div>
+              <div className="field" style={{ gridColumn: '1/-1' }}>
+                <label className="admin-label">副标题</label>
+                <input className="admin-input" value={subtitle} onChange={(e) => setSubtitle(e.target.value)} />
+              </div>
+              <div className="field" style={{ gridColumn: '1/-1' }}>
+                <label className="admin-label">描述</label>
+                <textarea className="admin-textarea" value={description} onChange={(e) => setDescription(e.target.value)} rows={3} />
+              </div>
+              <div className="field" style={{ gridColumn: '1/-1' }}>
+                <label className="admin-label">背景图 URL（粘贴图片地址）</label>
+                <input className="admin-input" value={imageUrl} onChange={(e) => setImageUrl(e.target.value)} placeholder="https://images.unsplash.com/..." />
+              </div>
               <div className="field">
                 <label className="admin-label">链接 URL</label>
-                <input className="admin-input" value={url} onChange={(e) => setUrl(e.target.value)} />
+                <input className="admin-input" value={href} onChange={(e) => setHref(e.target.value)} />
+              </div>
+              <div className="field">
+                <label className="admin-label">按钮文字</label>
+                <input className="admin-input" value={ctaLabel} onChange={(e) => setCtaLabel(e.target.value)} />
               </div>
               <div className="field">
                 <label className="admin-label">显示顺序</label>
@@ -202,7 +242,7 @@ function SectionModal({
           </div>
           <div className="modal-footer">
             <button className="admin-btn admin-btn-secondary" type="button" onClick={onClose}>取消</button>
-            <button className="admin-btn" type="submit">保存配置</button>
+            <button className="admin-btn" type="submit" disabled={saving}>{saving ? '保存中...' : '保存配置'}</button>
           </div>
         </form>
       </div>

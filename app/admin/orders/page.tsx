@@ -44,16 +44,28 @@ export default function AdminOrdersPage() {
     .filter((o) => !startDate || o.createdAt >= startDate)
     .filter((o) => !endDate || o.createdAt <= endDate);
 
-  const advanceOrder = (id: string) => {
+  const advanceOrder = async (id: string) => {
     const flow = ["pending", "paid", "making", "shipped", "completed"] as const;
-    setOrders((prev) =>
-      prev.map((o) => {
-        if (o.id !== id || o.status === "refunded") return o;
-        const idx = flow.indexOf(o.status as typeof flow[number]);
-        return { ...o, status: flow[Math.min(idx + 1, flow.length - 1)] };
-      })
-    );
-    showToast("订单状态已推进");
+    const order = orders.find((o) => o.id === id);
+    if (!order || order.status === "refunded") return;
+    const idx = flow.indexOf(order.status as typeof flow[number]);
+    const nextStatus = flow[Math.min(idx + 1, flow.length - 1)];
+    try {
+      const updated = { ...order, status: nextStatus };
+      const saved = await apiRequest<Order[]>("/api/orders", {
+        method: "PUT",
+        body: JSON.stringify(updated),
+      });
+      setOrders(saved);
+      showToast("订单状态已推进");
+      // refresh detail modal if open
+      if (detailModal?.id === id) {
+        const refreshed = saved.find((o) => o.id === id);
+        if (refreshed) setDetailModal(refreshed);
+      }
+    } catch {
+      showToast("更新失败，请重试");
+    }
   };
 
   return (
@@ -146,16 +158,7 @@ export default function AdminOrdersPage() {
         <OrderDetailModal
           order={detailModal}
           onClose={() => setDetailModal(null)}
-          onAdvance={() => {
-            advanceOrder(detailModal.id);
-            // refresh detail modal data
-            const updated = orders.find((o) => o.id === detailModal.id);
-            if (updated) {
-              const flow = ["pending", "paid", "making", "shipped", "completed"] as const;
-              const idx = flow.indexOf(updated.status as typeof flow[number]);
-              setDetailModal({ ...updated, status: flow[Math.min(idx + 1, flow.length - 1)] });
-            }
-          }}
+          onAdvance={() => advanceOrder(detailModal.id)}
         />
       )}
 

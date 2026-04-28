@@ -10,8 +10,12 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
   useEffect(() => {
     const auth = sessionStorage.getItem("lazyjam_admin_auth");
-    setIsAuthed(auth === "true");
+    const authed = auth === "true";
+    setIsAuthed(authed);
     setChecking(false);
+    if (!authed) {
+      window.location.href = "/admin/login";
+    }
   }, []);
 
   if (checking) return null;
@@ -36,6 +40,9 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           </Link>
           <Link href="/admin/orders" className="nav-button">
             <span className="nav-icon">O</span>订单管理
+          </Link>
+          <Link href="/admin/settings" className="nav-button">
+            <span className="nav-icon">C</span>全局配置
           </Link>
         </nav>
         <div className="sidebar-footer">
