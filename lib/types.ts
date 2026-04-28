@@ -4,6 +4,7 @@ export type PageConfig = {
   eyebrow: string;
   description: string;
   updatedAt: string;
+  status: "draft" | "published";
 };
 
 export type SiteConfig = {

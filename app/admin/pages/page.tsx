@@ -37,6 +37,7 @@ export default function AdminPagesPage() {
             eyebrow: payload.eyebrow ?? "",
             description: payload.description ?? "",
             updatedAt: new Date().toISOString(),
+            status: "draft" as const,
           },
           ...config.pages,
         ];
@@ -174,10 +175,11 @@ function PageModal({
   const [title, setTitle] = useState(page?.title ?? "");
   const [eyebrow, setEyebrow] = useState(page?.eyebrow ?? "");
   const [description, setDescription] = useState(page?.description ?? "");
+  const [pageStatus, setPageStatus] = useState<"draft" | "published">(page?.status ?? "draft");
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    onSave({ slug, title, eyebrow, description });
+    onSave({ slug, title, eyebrow, description, status: pageStatus });
   };
 
   return (
@@ -207,6 +209,13 @@ function PageModal({
                 <textarea className="admin-textarea" value={description} onChange={(e) => setDescription(e.target.value)} rows={3} />
               </div>
             </div>
+              <div className="field">
+                <label className="admin-label">状态</label>
+                <select className="admin-select" value={pageStatus} onChange={(e) => setPageStatus(e.target.value as "draft" | "published")}>
+                  <option value="draft">草稿</option>
+                  <option value="published">已发布</option>
+                </select>
+              </div>
           </div>
           <div className="modal-footer">
             <button className="admin-btn admin-btn-secondary" type="button" onClick={onClose}>取消</button>
