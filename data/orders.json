@@ -1,0 +1,14 @@
+[
+  {
+    "id": "order-sample-001",
+    "customerName": "样例客户",
+    "email": "sample@example.com",
+    "productId": "clay-moon-plate",
+    "productName": "月白粘土小碟",
+    "quantity": 1,
+    "total": 168,
+    "status": "making",
+    "note": "礼物包装，纸签写 To A.",
+    "createdAt": "2026-04-28T00:00:00.000Z"
+  }
+]

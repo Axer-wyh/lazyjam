@@ -1,0 +1,62 @@
+[
+  {
+    "id": "hero",
+    "type": "hero",
+    "title": "LazyJam",
+    "subtitle": "Wabi-sabi clay & bead objects",
+    "description": "给慵懒下午、亚麻桌布和旧书页之间，留下一点手作的温度。",
+    "imageUrl": "/images/hero-linen.svg",
+    "href": "/shop",
+    "ctaLabel": "浏览本期小物",
+    "order": 1,
+    "isActive": true
+  },
+  {
+    "id": "featured",
+    "type": "featured",
+    "title": "本期精选",
+    "subtitle": "Tiny editions",
+    "description": "每次只做少量，保留自然边缘、手揉痕迹和不完全对称的温柔。",
+    "imageUrl": "/images/section-featured.svg",
+    "href": "/shop",
+    "ctaLabel": "查看商品",
+    "order": 2,
+    "isActive": true
+  },
+  {
+    "id": "craft",
+    "type": "craft",
+    "title": "工艺展示",
+    "subtitle": "Clay, beads, linen",
+    "description": "粘土塑形、低饱和釉色、细珠串联，在慢速制作里形成独一无二的纹理。",
+    "imageUrl": "/images/section-craft.svg",
+    "href": "/about",
+    "ctaLabel": "了解 LazyJam",
+    "order": 3,
+    "isActive": true
+  },
+  {
+    "id": "journal",
+    "type": "journal",
+    "title": "手作日记",
+    "subtitle": "Notes from the table",
+    "description": "记录灵感、试色、失败的坯体，以及最终留下来的那些安静小物。",
+    "imageUrl": "/images/section-journal.svg",
+    "href": "/journal",
+    "ctaLabel": "阅读日记",
+    "order": 4,
+    "isActive": true
+  },
+  {
+    "id": "commission",
+    "type": "cta",
+    "title": "小批量定制",
+    "subtitle": "Made slowly",
+    "description": "可以为礼物、纪念日或个人风格调整色系、珠材与包装纸签。",
+    "imageUrl": "/images/section-commission.svg",
+    "href": "mailto:hello@lazyjam.studio",
+    "ctaLabel": "联系定制",
+    "order": 5,
+    "isActive": true
+  }
+]

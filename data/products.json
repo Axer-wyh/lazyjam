@@ -1,0 +1,93 @@
+[
+  {
+    "id": "clay-moon-plate",
+    "name": "月白粘土小碟",
+    "category": "clay",
+    "price": 168,
+    "imageUrl": "/images/product-placeholder.jpg",
+    "description": "手捏浅碟，边缘保留自然起伏，适合放戒指、耳钉或一小块线香。",
+    "materials": ["陶土", "哑光釉", "手工打磨"],
+    "inventory": 4,
+    "featured": true,
+    "status": "active",
+    "createdAt": "2026-04-28T00:00:00.000Z"
+  },
+  {
+    "id": "linen-bead-necklace",
+    "name": "亚麻米珠项链",
+    "category": "beads",
+    "price": 236,
+    "imageUrl": "/images/product-placeholder.jpg",
+    "description": "米色玻璃珠与微雾金属扣组合，长度适合单戴或叠戴。",
+    "materials": ["玻璃米珠", "黄铜扣", "尼龙线"],
+    "inventory": 6,
+    "featured": true,
+    "status": "active",
+    "createdAt": "2026-04-28T00:00:00.000Z"
+  },
+  {
+    "id": "persimmon-clay-brooch",
+    "name": "柿色粘土胸针",
+    "category": "clay",
+    "price": 128,
+    "imageUrl": "/images/product-placeholder.jpg",
+    "description": "Burnt Persimmon 色块胸针，适合别在棉麻外套或帆布包上。",
+    "materials": ["轻质粘土", "哑光保护层", "不锈钢别针"],
+    "inventory": 5,
+    "featured": true,
+    "status": "active",
+    "createdAt": "2026-04-28T00:00:00.000Z"
+  },
+  {
+    "id": "bookplate-earrings",
+    "name": "藏书票串珠耳坠",
+    "category": "beads",
+    "price": 198,
+    "imageUrl": "/images/product-placeholder.jpg",
+    "description": "受 Ex Libris 边框启发，使用细珠形成轻微几何轮廓。",
+    "materials": ["玻璃珠", "天然石", "925 银耳钩"],
+    "inventory": 3,
+    "featured": false,
+    "status": "active",
+    "createdAt": "2026-04-28T00:00:00.000Z"
+  },
+  {
+    "id": "clay-bead-charm",
+    "name": "粘土串珠挂饰",
+    "category": "mixed",
+    "price": 156,
+    "imageUrl": "/images/product-placeholder.jpg",
+    "description": "手捏粘土坠与旧书页色珠串，可挂在钥匙、包袋或书签上。",
+    "materials": ["粘土坠", "玻璃珠", "蜡绳"],
+    "inventory": 8,
+    "featured": false,
+    "status": "active",
+    "createdAt": "2026-04-28T00:00:00.000Z"
+  },
+  {
+    "id": "ash-stone-bracelet",
+    "name": "灰石串珠手链",
+    "category": "beads",
+    "price": 188,
+    "imageUrl": "/images/product-placeholder.jpg",
+    "description": "低饱和灰石与炭黑小珠，安静、耐看，适合日常佩戴。",
+    "materials": ["天然石", "玻璃珠", "弹力线"],
+    "inventory": 7,
+    "featured": true,
+    "status": "active",
+    "createdAt": "2026-04-28T00:00:00.000Z"
+  },
+  {
+    "id": "raw-linen-ring-dish",
+    "name": "Raw Linen 戒指托",
+    "category": "clay",
+    "price": 146,
+    "imageUrl": "/images/product-placeholder.jpg",
+    "description": "浅亚麻色小托盘，表面有轻微布纹压痕。",
+    "materials": ["陶土", "布纹压印", "透明哑光釉"],
+    "inventory": 2,
+    "featured": false,
+    "status": "active",
+    "createdAt": "2026-04-28T00:00:00.000Z"
+  }
+]

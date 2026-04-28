@@ -1,0 +1,80 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: light;
+  --raw-linen: #f3efe6;
+  --charcoal-clay: #2e2a25;
+  --burnt-persimmon: #a3543f;
+  --clay: #4a4037;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+  background:
+    radial-gradient(circle at top left, rgba(163, 84, 63, 0.08), transparent 32rem),
+    linear-gradient(180deg, #f3efe6 0%, #fbf8f1 100%);
+  color: var(--charcoal-clay);
+  font-family: Inter, "Noto Sans SC", system-ui, sans-serif;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+button,
+input,
+textarea,
+select {
+  font: inherit;
+}
+
+img {
+  display: block;
+  max-width: 100%;
+}
+
+.ex-libris-frame {
+  position: relative;
+}
+
+.ex-libris-frame::before {
+  border: 1px solid rgba(46, 42, 37, 0.82);
+  content: "";
+  inset: 0.75rem;
+  pointer-events: none;
+  position: absolute;
+}
+
+.soft-paper {
+  background-image:
+    linear-gradient(rgba(46, 42, 37, 0.035) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(46, 42, 37, 0.025) 1px, transparent 1px);
+  background-size: 34px 34px;
+}
+
+.admin-input {
+  @apply w-full rounded-none border border-charcoal/20 bg-parchment px-3 py-2 text-sm outline-none transition focus:border-persimmon;
+}
+
+.admin-label {
+  @apply text-xs font-semibold uppercase tracking-[0.14em] text-ash;
+}
+
+.admin-button {
+  @apply inline-flex items-center justify-center border border-charcoal bg-charcoal px-4 py-2 text-sm font-medium text-linen transition hover:bg-clay disabled:cursor-not-allowed disabled:opacity-50;
+}
+
+.admin-button-secondary {
+  @apply inline-flex items-center justify-center border border-charcoal/25 bg-transparent px-4 py-2 text-sm font-medium text-charcoal transition hover:border-charcoal;
+}

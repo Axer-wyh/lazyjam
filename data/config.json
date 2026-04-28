@@ -1,0 +1,37 @@
+{
+  "siteName": "LazyJam",
+  "tagline": "粘土手作与串珠首饰，给慢下来的日子一点温度。",
+  "announcement": "春夏小批量手作更新中，每一件都带着自然纹理与手工痕迹。",
+  "contactEmail": "hello@lazyjam.studio",
+  "instagram": "@lazyjam.studio",
+  "pages": [
+    {
+      "slug": "home",
+      "title": "LazyJam 手作商店",
+      "eyebrow": "Slow made, softly kept",
+      "description": "以粘土、珠子、亚麻色调和藏书票式构图，制作能陪伴日常的小物。",
+      "updatedAt": "2026-04-28T00:00:00.000Z"
+    },
+    {
+      "slug": "shop",
+      "title": "Shop",
+      "eyebrow": "Small batch objects",
+      "description": "浏览 LazyJam 的粘土手作、串珠首饰和混合材质作品。",
+      "updatedAt": "2026-04-28T00:00:00.000Z"
+    },
+    {
+      "slug": "about",
+      "title": "About LazyJam",
+      "eyebrow": "Hands, texture, patience",
+      "description": "LazyJam 关注自然材料、慢节奏制作和可以长久使用的日常物件。",
+      "updatedAt": "2026-04-28T00:00:00.000Z"
+    },
+    {
+      "slug": "journal",
+      "title": "手作日记",
+      "eyebrow": "Studio notes",
+      "description": "记录配色、打磨、串珠和每一次小批量制作背后的过程。",
+      "updatedAt": "2026-04-28T00:00:00.000Z"
+    }
+  ]
+}
