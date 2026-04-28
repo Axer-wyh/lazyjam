@@ -31,7 +31,7 @@ export type Section = {
 export type Product = {
   id: string;
   name: string;
-  category: "clay" | "beads" | "mixed";
+  category: string;
   price: number;
   imageUrl: string;
   description: string;
@@ -39,18 +39,44 @@ export type Product = {
   inventory: number;
   featured: boolean;
   status: "draft" | "active" | "sold_out";
+  stockTag: "Small Batch" | "Made to Order" | "One of a Kind" | "Sold Out";
+  cycle: string;
+  material: string;
+  size: string;
+  care: string;
+  note: string;
+  tags: string[];
   createdAt: string;
 };
 
 export type Order = {
   id: string;
-  customerName: string;
+  customer: string;
   email: string;
+  shipping: string;
+  payment: string;
   productId: string;
   productName: string;
   quantity: number;
   total: number;
-  status: "pending" | "paid" | "making" | "shipped" | "completed" | "cancelled";
+  status: "pending" | "paid" | "making" | "shipped" | "completed" | "cancelled" | "refunded";
   note: string;
   createdAt: string;
+};
+
+export type AdminPage = {
+  id: number;
+  name: string;
+  path: string;
+  status: "draft" | "published";
+  updated: string;
+};
+
+export type AdminSection = {
+  id: number;
+  name: string;
+  image: string;
+  url: string;
+  order: number;
+  status: "active" | "hidden";
 };

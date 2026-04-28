@@ -1,158 +1,230 @@
-'use client';
+"use client";
 
-import { useState, useEffect } from 'react';
+import { useEffect, useState } from "react";
+import { apiRequest } from "@/lib/client-api";
 
-interface Page {
-  id: string;
-  title: string;
-  slug: string;
-  status: 'draft' | 'published';
-  updatedAt: string;
-}
+type Page = {
+  id: number;
+  name: string;
+  path: string;
+  status: "draft" | "published";
+  updated: string;
+};
+
+const stockClass: Record<string, string> = {
+  "Small Batch": "small-batch",
+  "Made to Order": "made-order",
+  "One of a Kind": "one-kind",
+  "Sold Out": "sold-out",
+};
+
+const statusClass: Record<string, string> = {
+  draft: "draft",
+  published: "published",
+};
 
 export default function AdminPagesPage() {
   const [pages, setPages] = useState<Page[]>([]);
-  const [editingPage, setEditingPage] = useState<Page | null>(null);
-  const [isAdding, setIsAdding] = useState(false);
-  const [filter, setFilter] = useState('all');
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [modal, setModal] = useState<{ page: Page | null; isNew: boolean } | null>(null);
+  const [toast, setToast] = useState("");
 
   useEffect(() => {
-    fetch('/api/pages')
-      .then(res => res.json())
-      .then(data => setPages(data.pages || []));
+    apiRequest<{ pages: Page[] }>("/api/pages").then((d) => setPages(d.pages ?? []));
   }, []);
 
-  const filtered = filter === 'all' ? pages : pages.filter(p => p.status === filter);
-
-  const handleSave = async (page: Page) => {
-    const method = page.id ? 'PUT' : 'POST';
-    const url = page.id ? `/api/pages?id=${page.id}` : '/api/pages';
-    await fetch(url, {
-      method,
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(page),
-    });
-    const res = await fetch('/api/pages');
-    const data = await res.json();
-    setPages(data.pages || []);
-    setEditingPage(null);
-    setIsAdding(false);
+  const showToast = (msg: string) => {
+    setToast(msg);
+    setTimeout(() => setToast(""), 2200);
   };
 
-  const handleDelete = async (id: string) => {
-    if (!confirm('确定删除该页面？')) return;
-    await fetch(`/api/pages?id=${id}`, { method: 'DELETE' });
-    const res = await fetch('/api/pages');
-    const data = await res.json();
-    setPages(data.pages || []);
+  const filtered = pages.filter(
+    (p) => statusFilter === "all" || p.status === statusFilter
+  );
+
+  const handleSave = (payload: Partial<Page> & { name: string; path: string; status: "draft" | "published" }) => {
+    if (modal?.isNew) {
+      setPages((prev) => [
+        { id: Date.now(), ...payload, updated: new Date().toISOString().slice(0, 16).replace("T", " ") },
+        ...prev,
+      ]);
+    } else if (modal?.page) {
+      setPages((prev) =>
+        prev.map((p) =>
+          p.id === modal.page!.id
+            ? { ...p, ...payload, updated: new Date().toISOString().slice(0, 16).replace("T", " ") }
+            : p
+        )
+      );
+    }
+    setModal(null);
+    showToast("页面已保存");
   };
 
   return (
     <div>
-      <div className="mb-6 flex items-center justify-between">
-        <div>
-          <h1 className="font-serif text-3xl text-charcoal">页面管理</h1>
-          <p className="mt-1 text-sm text-taupe">管理网站各页面，创建、编辑和发布页面</p>
+      <div className="toolbar">
+        <div className="filters">
+          <select
+            className="admin-select filter-control"
+            value={statusFilter}
+            onChange={(e) => setStatusFilter(e.target.value)}
+            aria-label="页面状态筛选"
+          >
+            <option value="all">全部状态</option>
+            <option value="draft">草稿</option>
+            <option value="published">已发布</option>
+          </select>
         </div>
-        <button
-          onClick={() => setIsAdding(true)}
-          className="bg-accent px-4 py-2 text-sm text-white transition hover:bg-accent/90"
-        >
+        <button className="admin-btn" type="button" onClick={() => setModal({ page: null, isNew: true })}>
           + 新建页面
         </button>
       </div>
 
-      <div className="mb-4 flex gap-2">
-        {['all', 'draft', 'published'].map(f => (
-          <button
-            key={f}
-            onClick={() => setFilter(f)}
-            className={`px-3 py-1 text-xs ${filter === f ? 'bg-charcoal text-linen' : 'bg-warm-oat text-taupe'}`}
-          >
-            {f === 'all' ? '全部' : f === 'draft' ? '草稿' : '已发布'}
-          </button>
-        ))}
-      </div>
-
-      <div className="overflow-x-auto rounded-xl border border-stone/40">
-        <table className="w-full border-collapse text-sm">
+      <div className="admin-panel table-wrap">
+        <table className="admin-table">
           <thead>
-            <tr className="border-b border-stone bg-warm-oat text-left">
-              <th className="px-4 py-3 font-medium text-taupe">页面名称</th>
-              <th className="px-4 py-3 font-medium text-taupe">路径</th>
-              <th className="px-4 py-3 font-medium text-taupe">状态</th>
-              <th className="px-4 py-3 font-medium text-taupe">最后更新</th>
-              <th className="px-4 py-3 font-medium text-taupe">操作</th>
+            <tr>
+              <th>页面名称</th>
+              <th>路径</th>
+              <th>状态</th>
+              <th>更新时间</th>
+              <th>操作</th>
             </tr>
           </thead>
           <tbody>
-            {filtered.map((page, i) => (
-              <tr key={page.id} className={`border-b border-stone/30 hover:bg-warm-oat/50 ${i % 2 === 0 ? 'bg-linen' : 'bg-warm-oat/20'}`}>
-                <td className="px-4 py-3 font-medium text-charcoal">{page.title}</td>
-                <td className="px-4 py-3 font-mono text-xs text-taupe">/{page.slug}</td>
-                <td className="px-4 py-3">
-                  <span className={`rounded px-2 py-0.5 text-xs ${page.status === 'published' ? 'bg-sage/20 text-sage' : 'bg-gray-200 text-gray-500'}`}>
-                    {page.status === 'published' ? '已发布' : '草稿'}
+            {filtered.length === 0 && (
+              <tr>
+                <td colSpan={5} style={{ textAlign: "center", color: "var(--weathered-taupe)", padding: 34 }}>
+                  没有匹配的页面。
+                </td>
+              </tr>
+            )}
+            {filtered.map((page) => (
+              <tr key={page.id}>
+                <td style={{ fontWeight: 700 }}>{page.name}</td>
+                <td style={{ color: "var(--weathered-taupe)", fontFamily: "monospace", fontSize: 13 }}>{page.path}</td>
+                <td>
+                  <span className={`status-badge status-${statusClass[page.status] ?? page.status}`}>
+                    {page.status === "published" ? "已发布" : "草稿"}
                   </span>
                 </td>
-                <td className="px-4 py-3 text-taupe">{page.updatedAt}</td>
-                <td className="px-4 py-3">
-                  <div className="flex gap-3">
-                    <button onClick={() => setEditingPage(page)} className="text-xs text-accent hover:underline">编辑</button>
-                    <button onClick={() => handleDelete(page.id)} className="text-xs text-red-500 hover:underline">删除</button>
-                  </div>
+                <td>{page.updated}</td>
+                <td>
+                  <button
+                    className="admin-btn admin-btn-ghost"
+                    type="button"
+                    onClick={() => setModal({ page, isNew: false })}
+                  >
+                    编辑
+                  </button>
+                  <button
+                    className="admin-btn admin-btn-ghost admin-btn-danger"
+                    type="button"
+                    onClick={() => {
+                      if (confirm("确认删除这个页面？")) {
+                        setPages((p) => p.filter((x) => x.id !== page.id));
+                        showToast("页面已删除");
+                      }
+                    }}
+                  >
+                    删除
+                  </button>
                 </td>
               </tr>
             ))}
           </tbody>
         </table>
-        {filtered.length === 0 && (
-          <div className="py-12 text-center text-sm text-taupe">暂无页面</div>
-        )}
       </div>
 
-      {(editingPage || isAdding) && (
+      {modal && (
         <PageModal
-          page={editingPage || { id: '', title: '', slug: '', status: 'draft', updatedAt: new Date().toISOString().split('T')[0] }}
+          page={modal.page}
+          isNew={modal.isNew}
+          onClose={() => setModal(null)}
           onSave={handleSave}
-          onClose={() => { setEditingPage(null); setIsAdding(false); }}
         />
       )}
+
+      {toast && <div className="toast is-showing">{toast}</div>}
+
+      <style>{`
+        .toolbar {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 16px;
+          margin-bottom: 16px;
+        }
+        .filters { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+        .filter-control {
+          height: 38px;
+          min-width: 154px;
+          padding: 0 10px;
+        }
+      `}</style>
     </div>
   );
 }
 
-function PageModal({ page, onSave, onClose }: { page: Page; onSave: (p: Page) => void; onClose: () => void }) {
-  const [form, setForm] = useState(page);
+function PageModal({
+  page,
+  isNew,
+  onClose,
+  onSave,
+}: {
+  page: Page | null;
+  isNew: boolean;
+  onClose: () => void;
+  onSave: (p: Partial<Page> & { name: string; path: string; status: "draft" | "published" }) => void;
+}) {
+  const [name, setName] = useState(page?.name ?? "");
+  const [path, setPath] = useState(page?.path ?? "/");
+  const [status, setStatus] = useState<"draft" | "published">(page?.status ?? "draft");
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!path.startsWith("/")) {
+      alert("路径必须以 / 开头");
+      return;
+    }
+    onSave({ name, path, status });
+  };
+
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-charcoal/50">
-      <div className="w-full max-w-md rounded-xl bg-linen p-6 shadow-lg">
-        <h2 className="mb-4 font-serif text-2xl text-charcoal">{form.id ? '编辑页面' : '新建页面'}</h2>
-        <div className="space-y-4">
-          <div>
-            <label className="block text-xs text-taupe">页面名称</label>
-            <input value={form.title} onChange={e => setForm({ ...form, title: e.target.value })} className="mt-1 w-full rounded border border-stone bg-warm-oat px-3 py-2 text-sm text-charcoal" />
-          </div>
-          <div>
-            <label className="block text-xs text-taupe">路径（slug）</label>
-            <div className="flex items-center gap-2">
-              <span className="text-sm text-taupe">/</span>
-              <input value={form.slug} onChange={e => setForm({ ...form, slug: e.target.value.replace(/\s/g, '-').toLowerCase() })} className="mt-1 flex-1 rounded border border-stone bg-warm-oat px-3 py-2 text-sm text-charcoal" />
+    <div className="modal-overlay is-open" onClick={(e) => e.target === e.currentTarget && onClose()}>
+      <div className="modal">
+        <div className="modal-header">
+          <h2 className="modal-title">{isNew ? "新建页面" : "编辑页面"}</h2>
+          <button className="modal-close" type="button" onClick={onClose}>×</button>
+        </div>
+        <form onSubmit={handleSubmit}>
+          <div className="modal-body">
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
+              <div className="field">
+                <label className="admin-label">页面名称</label>
+                <input className="admin-input" value={name} onChange={(e) => setName(e.target.value)} required />
+              </div>
+              <div className="field">
+                <label className="admin-label">路径</label>
+                <input className="admin-input" value={path} onChange={(e) => setPath(e.target.value)} required />
+              </div>
+              <div className="field">
+                <label className="admin-label">状态</label>
+                <select className="admin-select" value={status} onChange={(e) => setStatus(e.target.value as "draft" | "published")}>
+                  <option value="draft">草稿</option>
+                  <option value="published">已发布</option>
+                </select>
+              </div>
             </div>
           </div>
-          <div>
-            <label className="block text-xs text-taupe">状态</label>
-            <select value={form.status} onChange={e => setForm({ ...form, status: e.target.value as 'draft' | 'published' })} className="mt-1 w-full rounded border border-stone bg-warm-oat px-3 py-2 text-sm text-charcoal">
-              <option value="draft">草稿</option>
-              <option value="published">已发布</option>
-            </select>
+          <div className="modal-footer">
+            <button className="admin-btn admin-btn-secondary" type="button" onClick={onClose}>取消</button>
+            <button className="admin-btn" type="submit">保存页面</button>
           </div>
-        </div>
-        <div className="mt-5 flex justify-end gap-3">
-          <button onClick={onClose} className="px-4 py-2 text-sm text-taupe hover:text-charcoal">取消</button>
-          <button onClick={() => onSave({ ...form, updatedAt: new Date().toISOString().split('T')[0] })} className="bg-accent px-4 py-2 text-sm text-white hover:bg-accent/90">保存</button>
-        </div>
+        </form>
       </div>
+      <style>{`.field { display: grid; gap: 7px; }`}</style>
     </div>
   );
 }

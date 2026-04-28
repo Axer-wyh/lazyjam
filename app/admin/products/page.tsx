@@ -1,134 +1,148 @@
-'use client';
+"use client";
 
-import { useState, useEffect } from 'react';
-import Link from 'next/link';
+import { useEffect, useState } from "react";
+import { apiRequest } from "@/lib/client-api";
+import type { Product } from "@/lib/types";
 
-interface Product {
-  id: string;
-  name: string;
-  price: number;
-  category: string;
-  tags: string[];
-  stock: number;
-  status: string;
-  image: string;
-  description: string;
-  material: string;
-  dimensions: string;
-  care: string;
-  notes: string;
-}
-
-const tagColors: Record<string, string> = {
-  'Small Batch': 'bg-sage/20 text-sage',
-  'Made to Order': 'bg-blue-100 text-blue-700',
-  'One of a Kind': 'bg-accent/20 text-accent',
-  'Sold Out': 'bg-gray-200 text-gray-500',
+const stockClass: Record<string, string> = {
+  "Small Batch": "small-batch",
+  "Made to Order": "made-order",
+  "One of a Kind": "one-kind",
+  "Sold Out": "sold-out",
 };
+
+const tagList = ["clay", "bead", "pearl", "linen", "earrings", "necklace", "bracelet", "one-off"];
 
 export default function AdminProductsPage() {
   const [products, setProducts] = useState<Product[]>([]);
-  const [editingProduct, setEditingProduct] = useState<Product | null>(null);
-  const [isAdding, setIsAdding] = useState(false);
-  const [filter, setFilter] = useState('all');
+  const [categoryFilter, setCategoryFilter] = useState("all");
+  const [stockFilter, setStockFilter] = useState("all");
+  const [modal, setModal] = useState<{ product: Product | null; isNew: boolean } | null>(null);
+  const [toast, setToast] = useState("");
 
   useEffect(() => {
-    fetch('/api/products')
-      .then(res => res.json())
-      .then(data => setProducts(data.products || []));
+    apiRequest<Product[]>("/api/products").then(setProducts);
   }, []);
 
-  const filtered = filter === 'all' ? products : products.filter(p => p.tags.includes(filter));
-
-  const handleSave = async (product: Product) => {
-    const method = product.id ? 'PUT' : 'POST';
-    const url = product.id ? `/api/products?id=${product.id}` : '/api/products';
-    await fetch(url, {
-      method,
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(product),
-    });
-    const res = await fetch('/api/products');
-    const data = await res.json();
-    setProducts(data.products || []);
-    setEditingProduct(null);
-    setIsAdding(false);
+  const showToast = (msg: string) => {
+    setToast(msg);
+    setTimeout(() => setToast(""), 2200);
   };
 
-  const handleDelete = async (id: string) => {
-    if (!confirm('确定删除该商品？')) return;
-    await fetch(`/api/products?id=${id}`, { method: 'DELETE' });
-    const res = await fetch('/api/products');
-    const data = await res.json();
-    setProducts(data.products || []);
+  const filtered = products
+    .filter((p) => categoryFilter === "all" || p.category === categoryFilter)
+    .filter((p) => stockFilter === "all" || p.stockTag === stockFilter);
+
+  const handleSave = (payload: Partial<Product>) => {
+    if (modal?.isNew) {
+      setProducts((prev) => [
+        {
+          ...prev[0],
+          id: String(Date.now()),
+          name: "",
+          category: "Clay Earrings",
+          price: 0,
+          imageUrl: "https://images.unsplash.com/photo-1606760227091-3dd870d97f1d?auto=format&fit=crop&w=900&q=80",
+          description: "",
+          materials: [],
+          inventory: 0,
+          featured: false,
+          status: "draft",
+          stockTag: "Small Batch",
+          cycle: "5-7 days",
+          material: "",
+          size: "",
+          care: "",
+          note: "",
+          tags: [],
+          createdAt: new Date().toISOString(),
+          ...payload,
+        },
+        ...prev,
+      ]);
+    } else if (modal?.product) {
+      setProducts((prev) =>
+        prev.map((p) => (p.id === modal.product!.id ? { ...p, ...payload } : p))
+      );
+    }
+    setModal(null);
+    showToast("商品已保存");
+  };
+
+  const handleDelete = (id: string) => {
+    if (!confirm("确认删除这个商品？")) return;
+    setProducts((p) => p.filter((x) => x.id !== id));
+    showToast("商品已删除");
   };
 
   return (
     <div>
-      <div className="mb-6 flex items-center justify-between">
-        <div>
-          <h1 className="font-serif text-3xl text-charcoal">商品管理</h1>
-          <p className="mt-1 text-sm text-taupe">管理商品列表、价格、库存和上下架状态</p>
+      <div className="toolbar">
+        <div className="filters">
+          <select className="admin-select filter-control" value={categoryFilter} onChange={(e) => setCategoryFilter(e.target.value)} aria-label="商品分类筛选">
+            <option value="all">全部分类</option>
+            {["Clay Earrings", "Bead Necklace", "Bracelet", "Mixed Pair"].map((c) => (
+              <option key={c} value={c}>{c}</option>
+            ))}
+          </select>
+          <select className="admin-select filter-control" value={stockFilter} onChange={(e) => setStockFilter(e.target.value)} aria-label="库存状态筛选">
+            <option value="all">全部库存</option>
+            {["Small Batch", "Made to Order", "One of a Kind", "Sold Out"].map((s) => (
+              <option key={s} value={s}>{s}</option>
+            ))}
+          </select>
         </div>
-        <button
-          onClick={() => setIsAdding(true)}
-          className="bg-accent px-4 py-2 text-sm text-white transition hover:bg-accent/90"
-        >
+        <button className="admin-btn" type="button" onClick={() => setModal({ product: null, isNew: true })}>
           + 新增商品
         </button>
       </div>
 
-      <div className="mb-4 flex gap-2">
-        {['all', 'Small Batch', 'Made to Order', 'One of a Kind', 'Sold Out'].map(f => (
-          <button
-            key={f}
-            onClick={() => setFilter(f)}
-            className={`px-3 py-1 text-xs ${filter === f ? 'bg-charcoal text-linen' : 'bg-warm-oat text-taupe'}`}
-          >
-            {f === 'all' ? '全部' : f}
-          </button>
-        ))}
-      </div>
-
-      <div className="overflow-x-auto">
-        <table className="w-full border-collapse text-sm">
+      <div className="admin-panel table-wrap">
+        <table className="admin-table">
           <thead>
-            <tr className="border-b border-stone bg-warm-oat text-left">
-              <th className="px-4 py-3 font-medium text-taupe">商品</th>
-              <th className="px-4 py-3 font-medium text-taupe">价格</th>
-              <th className="px-4 py-3 font-medium text-taupe">分类</th>
-              <th className="px-4 py-3 font-medium text-taupe">标签</th>
-              <th className="px-4 py-3 font-medium text-taupe">库存</th>
-              <th className="px-4 py-3 font-medium text-taupe">操作</th>
+            <tr>
+              <th>商品</th>
+              <th>价格</th>
+              <th>库存标签</th>
+              <th>状态</th>
+              <th>操作</th>
             </tr>
           </thead>
           <tbody>
-            {filtered.map((product, i) => (
-              <tr key={product.id} className={`border-b border-stone/30 hover:bg-warm-oat/50 ${i % 2 === 0 ? 'bg-linen' : 'bg-warm-oat/20'}`}>
-                <td className="px-4 py-3">
-                  <div className="flex items-center gap-3">
-                    <img src={product.image} alt="" className="h-12 w-12 rounded object-cover" />
+            {filtered.length === 0 && (
+              <tr>
+                <td colSpan={5} style={{ textAlign: "center", color: "var(--weathered-taupe)", padding: 34 }}>
+                  没有匹配的商品。
+                </td>
+              </tr>
+            )}
+            {filtered.map((product) => (
+              <tr key={product.id}>
+                <td>
+                  <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                    <div className="admin-thumb">
+                      <img src={product.imageUrl} alt={product.name} />
+                    </div>
                     <div>
-                      <p className="font-medium text-charcoal">{product.name}</p>
-                      <p className="text-xs text-taupe line-clamp-1">{product.description}</p>
+                      <div style={{ fontWeight: 700 }}>{product.name}</div>
+                      <div style={{ color: "var(--weathered-taupe)", fontSize: 12 }}>{product.category}</div>
                     </div>
                   </div>
                 </td>
-                <td className="px-4 py-3 text-charcoal">¥{product.price}</td>
-                <td className="px-4 py-3 text-taupe">{product.category}</td>
-                <td className="px-4 py-3">
-                  <div className="flex flex-wrap gap-1">
-                    {product.tags.map(t => (
-                      <span key={t} className={`rounded px-2 py-0.5 text-xs ${tagColors[t] || 'bg-gray-100 text-gray-600'}`}>{t}</span>
-                    ))}
-                  </div>
+                <td>${product.price}</td>
+                <td>
+                  <span className={`status-badge status-${stockClass[product.stockTag] ?? product.stockTag}`}>
+                    {product.stockTag}
+                  </span>
                 </td>
-                <td className="px-4 py-3 text-taupe">{product.stock}</td>
-                <td className="px-4 py-3">
-                  <div className="flex gap-2">
-                    <button onClick={() => setEditingProduct(product)} className="text-xs text-accent hover:underline">编辑</button>
-                    <button onClick={() => handleDelete(product.id)} className="text-xs text-red-500 hover:underline">删除</button>
-                  </div>
+                <td>{product.status}</td>
+                <td>
+                  <button className="admin-btn admin-btn-ghost" type="button" onClick={() => setModal({ product, isNew: false })}>
+                    编辑
+                  </button>
+                  <button className="admin-btn admin-btn-ghost admin-btn-danger" type="button" onClick={() => handleDelete(product.id)}>
+                    删除
+                  </button>
                 </td>
               </tr>
             ))}
@@ -136,80 +150,155 @@ export default function AdminProductsPage() {
         </table>
       </div>
 
-      {(editingProduct || isAdding) && (
+      {modal && (
         <ProductModal
-          product={editingProduct || {
-            id: '', name: '', price: 0, category: '', tags: [], stock: 0, status: 'draft',
-            image: '/images/product-placeholder.jpg', description: '', material: '', dimensions: '', care: '', notes: ''
-          }}
+          product={modal.product}
+          isNew={modal.isNew}
+          onClose={() => setModal(null)}
           onSave={handleSave}
-          onClose={() => { setEditingProduct(null); setIsAdding(false); }}
         />
       )}
+
+      {toast && <div className="toast is-showing">{toast}</div>}
+
+      <style>{`
+        .toolbar {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 16px;
+          margin-bottom: 16px;
+        }
+        .filters { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+        .filter-control { height: 38px; min-width: 154px; padding: 0 10px; }
+      `}</style>
     </div>
   );
 }
 
-function ProductModal({ product, onSave, onClose }: { product: Product; onSave: (p: Product) => void; onClose: () => void }) {
-  const [form, setForm] = useState(product);
+function ProductModal({
+  product,
+  isNew,
+  onClose,
+  onSave,
+}: {
+  product: Product | null;
+  isNew: boolean;
+  onClose: () => void;
+  onSave: (p: Partial<Product>) => void;
+}) {
+  const [name, setName] = useState(product?.name ?? "");
+  const [category, setCategory] = useState(product?.category ?? "Clay Earrings");
+  const [price, setPrice] = useState(product?.price ?? 0);
+  const [stockTag, setStockTag] = useState(product?.stockTag ?? "Small Batch");
+  const [status, setStatus] = useState(product?.status ?? "draft");
+  const [inventory, setInventory] = useState(product?.inventory ?? 0);
+  const [cycle, setCycle] = useState(product?.cycle ?? "5-7 days");
+  const [material, setMaterial] = useState(product?.material ?? "");
+  const [size, setSize] = useState(product?.size ?? "");
+  const [care, setCare] = useState(product?.care ?? "");
+  const [note, setNote] = useState(product?.note ?? "");
+  const [tags, setTags] = useState<string[]>(product?.tags ?? []);
+
+  const toggleTag = (tag: string) =>
+    setTags((prev) => (prev.includes(tag) ? prev.filter((t) => t !== tag) : [...prev, tag]));
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    onSave({ name, category, price, stockTag, status, inventory, cycle, material, size, care, note, tags });
+  };
+
+  const fieldStyle = { display: "grid", gap: 7 };
+
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-charcoal/50">
-      <div className="w-full max-w-2xl rounded-xl bg-linen p-6 shadow-lg">
-        <h2 className="mb-4 font-serif text-2xl text-charcoal">{form.id ? '编辑商品' : '新增商品'}</h2>
-        <div className="grid gap-4">
-          <div>
-            <label className="block text-xs text-taupe">商品名称</label>
-            <input value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} className="mt-1 w-full rounded border border-stone bg-warm-oat px-3 py-2 text-sm text-charcoal" />
-          </div>
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-xs text-taupe">价格 (¥)</label>
-              <input type="number" value={form.price} onChange={e => setForm({ ...form, price: Number(e.target.value) })} className="mt-1 w-full rounded border border-stone bg-warm-oat px-3 py-2 text-sm text-charcoal" />
-            </div>
-            <div>
-              <label className="block text-xs text-taupe">分类</label>
-              <input value={form.category} onChange={e => setForm({ ...form, category: e.target.value })} className="mt-1 w-full rounded border border-stone bg-warm-oat px-3 py-2 text-sm text-charcoal" />
-            </div>
-          </div>
-          <div>
-            <label className="block text-xs text-taupe">图片 URL</label>
-            <input value={form.image} onChange={e => setForm({ ...form, image: e.target.value })} className="mt-1 w-full rounded border border-stone bg-warm-oat px-3 py-2 text-sm text-charcoal" />
-          </div>
-          <div>
-            <label className="block text-xs text-taupe">描述</label>
-            <textarea value={form.description} onChange={e => setForm({ ...form, description: e.target.value })} rows={2} className="mt-1 w-full rounded border border-stone bg-warm-oat px-3 py-2 text-sm text-charcoal" />
-          </div>
-          <div className="grid grid-cols-3 gap-4">
-            <div>
-              <label className="block text-xs text-taupe">库存</label>
-              <input type="number" value={form.stock} onChange={e => setForm({ ...form, stock: Number(e.target.value) })} className="mt-1 w-full rounded border border-stone bg-warm-oat px-3 py-2 text-sm text-charcoal" />
-            </div>
-            <div>
-              <label className="block text-xs text-taupe">材质</label>
-              <input value={form.material} onChange={e => setForm({ ...form, material: e.target.value })} className="mt-1 w-full rounded border border-stone bg-warm-oat px-3 py-2 text-sm text-charcoal" />
-            </div>
-            <div>
-              <label className="block text-xs text-taupe">尺寸</label>
-              <input value={form.dimensions} onChange={e => setForm({ ...form, dimensions: e.target.value })} className="mt-1 w-full rounded border border-stone bg-warm-oat px-3 py-2 text-sm text-charcoal" />
-            </div>
-          </div>
-          <div>
-            <label className="block text-xs text-taupe">护理说明</label>
-            <textarea value={form.care} onChange={e => setForm({ ...form, care: e.target.value })} rows={2} className="mt-1 w-full rounded border border-stone bg-warm-oat px-3 py-2 text-sm text-charcoal" />
-          </div>
-          <div>
-            <label className="block text-xs text-taupe">手作差异说明</label>
-            <textarea value={form.notes} onChange={e => setForm({ ...form, notes: e.target.value })} rows={2} className="mt-1 w-full rounded border border-stone bg-warm-oat px-3 py-2 text-sm text-charcoal" />
-          </div>
-          <div>
-            <label className="block text-xs text-taupe">标签（用逗号分隔）</label>
-            <input value={form.tags.join(', ')} onChange={e => setForm({ ...form, tags: e.target.value.split(',').map(s => s.trim()).filter(Boolean) })} className="mt-1 w-full rounded border border-stone bg-warm-oat px-3 py-2 text-sm text-charcoal" />
-          </div>
+    <div className="modal-overlay is-open" onClick={(e) => e.target === e.currentTarget && onClose()}>
+      <div className="modal large">
+        <div className="modal-header">
+          <h2 className="modal-title">{isNew ? "新增商品" : "编辑商品"}</h2>
+          <button className="modal-close" type="button" onClick={onClose}>×</button>
         </div>
-        <div className="mt-5 flex justify-end gap-3">
-          <button onClick={onClose} className="px-4 py-2 text-sm text-taupe hover:text-charcoal">取消</button>
-          <button onClick={() => onSave(form)} className="bg-accent px-4 py-2 text-sm text-white hover:bg-accent/90">保存</button>
-        </div>
+        <form onSubmit={handleSubmit}>
+          <div className="modal-body">
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
+              <div className="field" style={fieldStyle}>
+                <label className="admin-label">商品名称</label>
+                <input className="admin-input" value={name} onChange={(e) => setName(e.target.value)} required />
+              </div>
+              <div className="field" style={fieldStyle}>
+                <label className="admin-label">分类</label>
+                <select className="admin-select" value={category} onChange={(e) => setCategory(e.target.value)}>
+                  {["Clay Earrings", "Bead Necklace", "Bracelet", "Mixed Pair"].map((c) => (
+                    <option key={c} value={c}>{c}</option>
+                  ))}
+                </select>
+              </div>
+              <div className="field" style={fieldStyle}>
+                <label className="admin-label">价格</label>
+                <input className="admin-input" type="number" min={0} value={price} onChange={(e) => setPrice(Number(e.target.value))} />
+              </div>
+              <div className="field" style={fieldStyle}>
+                <label className="admin-label">库存</label>
+                <input className="admin-input" type="number" min={0} value={inventory} onChange={(e) => setInventory(Number(e.target.value))} />
+              </div>
+              <div className="field" style={fieldStyle}>
+                <label className="admin-label">制作周期</label>
+                <input className="admin-input" value={cycle} onChange={(e) => setCycle(e.target.value)} />
+              </div>
+              <div className="field" style={fieldStyle}>
+                <label className="admin-label">库存标签</label>
+                <select className="admin-select" value={stockTag} onChange={(e) => setStockTag(e.target.value as Product["stockTag"])}>
+                  {Object.keys(stockClass).map((s) => (
+                    <option key={s} value={s}>{s}</option>
+                  ))}
+                </select>
+              </div>
+              <div className="field" style={fieldStyle}>
+                <label className="admin-label">状态</label>
+                <select className="admin-select" value={status} onChange={(e) => setStatus(e.target.value as Product["status"])}>
+                  {["已上架", "草稿", "售罄展示"].map((s) => (
+                    <option key={s} value={s}>{s}</option>
+                  ))}
+                </select>
+              </div>
+              <div className="field" style={{ gridColumn: "1/-1", display: "grid", gap: 7 }}>
+                <label className="admin-label">材质</label>
+                <textarea className="admin-textarea" value={material} onChange={(e) => setMaterial(e.target.value)} />
+              </div>
+              <div className="field" style={{ gridColumn: "1/-1", display: "grid", gap: 7 }}>
+                <label className="admin-label">尺寸</label>
+                <textarea className="admin-textarea" value={size} onChange={(e) => setSize(e.target.value)} />
+              </div>
+              <div className="field" style={{ gridColumn: "1/-1", display: "grid", gap: 7 }}>
+                <label className="admin-label">护理说明</label>
+                <textarea className="admin-textarea" value={care} onChange={(e) => setCare(e.target.value)} />
+              </div>
+              <div className="field" style={{ gridColumn: "1/-1", display: "grid", gap: 7 }}>
+                <label className="admin-label">手作差异说明</label>
+                <textarea className="admin-textarea" value={note} onChange={(e) => setNote(e.target.value)} />
+              </div>
+              <div className="field" style={{ gridColumn: "1/-1", display: "grid", gap: 7 }}>
+                <label className="admin-label">标签选择</label>
+                <div className="tag-options" style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+                  {tagList.map((tag) => (
+                    <label key={tag} className="check-pill" style={{ cursor: "pointer" }}>
+                      <input
+                        type="checkbox"
+                        checked={tags.includes(tag)}
+                        onChange={() => toggleTag(tag)}
+                        style={{ display: "none" }}
+                      />
+                      {tags.includes(tag) && <span>✓ </span>}{tag}
+                    </label>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+          <div className="modal-footer">
+            <button className="admin-btn admin-btn-secondary" type="button" onClick={onClose}>取消</button>
+            <button className="admin-btn" type="submit">保存商品</button>
+          </div>
+        </form>
       </div>
     </div>
   );

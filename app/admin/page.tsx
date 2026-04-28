@@ -1,57 +1,121 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { apiRequest } from "@/lib/client-api";
-import type { Order, Product, Section, SiteConfig } from "@/lib/types";
+import type { Order, Product, Section } from "@/lib/types";
 
 export default function AdminDashboard() {
-  const [config, setConfig] = useState<SiteConfig | null>(null);
-  const [sections, setSections] = useState<Section[]>([]);
-  const [products, setProducts] = useState<Product[]>([]);
+  const [pagesCount, setPagesCount] = useState(0);
+  const [productsCount, setProductsCount] = useState(0);
+  const [ordersCount, setOrdersCount] = useState(0);
   const [orders, setOrders] = useState<Order[]>([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     Promise.all([
-      apiRequest<SiteConfig>("/api/pages"),
-      apiRequest<Section[]>("/api/sections"),
+      apiRequest<{ pages: unknown[] }>("/api/pages"),
       apiRequest<Product[]>("/api/products"),
-      apiRequest<Order[]>("/api/orders")
-    ]).then(([siteConfig, sectionData, productData, orderData]) => {
-      setConfig(siteConfig);
-      setSections(sectionData);
-      setProducts(productData);
-      setOrders(orderData);
-    });
+      apiRequest<Order[]>("/api/orders"),
+    ]).then(([config, products, orderData]) => {
+      setPagesCount(config.pages?.length ?? 0);
+      setProductsCount(products.length);
+      setOrdersCount(orderData.length);
+      setOrders(orderData.slice(0, 5));
+    }).finally(() => setLoading(false));
   }, []);
-
-  const stats = useMemo(
-    () => [
-      { label: "页面", value: config?.pages.length || 0 },
-      { label: "启用板块", value: sections.filter((section) => section.isActive).length },
-      { label: "在售商品", value: products.filter((product) => product.status === "active").length },
-      { label: "订单", value: orders.length }
-    ],
-    [config, orders, products, sections]
-  );
 
   return (
     <div>
-      <p className="admin-label">Dashboard</p>
-      <h1 className="mt-2 font-serif text-4xl text-charcoal">后台首页</h1>
-      <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        {stats.map((stat) => (
-          <div key={stat.label} className="border border-charcoal/12 bg-parchment p-5">
-            <p className="text-sm text-charcoal/58">{stat.label}</p>
-            <p className="mt-3 font-serif text-5xl text-charcoal">{stat.value}</p>
-          </div>
-        ))}
+      <div className="stats-row">
+        <div className="stat-card">
+          <p className="stat-label">页面</p>
+          <p className="stat-value">{pagesCount}</p>
+        </div>
+        <div className="stat-card">
+          <p className="stat-label">商品</p>
+          <p className="stat-value">{productsCount}</p>
+        </div>
+        <div className="stat-card">
+          <p className="stat-label">订单</p>
+          <p className="stat-value">{ordersCount}</p>
+        </div>
       </div>
-      <div className="mt-8 border border-charcoal/12 bg-parchment p-6">
-        <h2 className="font-serif text-3xl text-charcoal">内容状态</h2>
-        <p className="mt-3 max-w-2xl text-sm leading-7 text-charcoal/66">
-          页面、板块、商品和订单都通过 Next.js API routes 读写 `data/` 下的 JSON 文件。当前版本适合小体量内容管理，后续可平滑替换为数据库。
-        </p>
+
+      <div className="admin-panel" style={{ marginTop: 28 }}>
+        <div style={{ padding: "18px 20px", borderBottom: "1px solid rgba(201,191,175,0.58)" }}>
+          <h2 style={{ margin: 0, fontFamily: "'Cormorant Garamond',Georgia,serif", fontSize: 24, color: "var(--charcoal-clay)" }}>
+            最近订单
+          </h2>
+        </div>
+        <div className="table-wrap">
+          <table className="admin-table">
+            <thead>
+              <tr>
+                <th>订单号</th>
+                <th>客户</th>
+                <th>金额</th>
+                <th>状态</th>
+                <th>日期</th>
+              </tr>
+            </thead>
+            <tbody>
+              {orders.map((order) => (
+                <tr key={order.id}>
+                  <td style={{ fontFamily: "monospace", fontSize: 13 }}>{order.id}</td>
+                  <td style={{ fontWeight: 700 }}>{order.customer}</td>
+                  <td>${order.total}</td>
+                  <td>
+                    <span className={`status-badge status-${order.status}`}>
+                      {order.status === "pending" ? "待付款" :
+                       order.status === "paid" ? "已付款" :
+                       order.status === "making" ? "制作中" :
+                       order.status === "shipped" ? "已发货" :
+                       order.status === "completed" ? "已完成" :
+                       order.status === "refunded" ? "已退款" : order.status}
+                    </span>
+                  </td>
+                  <td>{order.createdAt?.split("T")[0] ?? order.createdAt}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       </div>
+
+      <style>{`
+        .stats-row {
+          display: grid;
+          grid-template-columns: repeat(3, 1fr);
+          gap: 16px;
+        }
+        .stat-card {
+          border: 1px solid rgba(201,191,175,0.72);
+          border-radius: 6px;
+          background: rgba(255,252,245,0.74);
+          padding: 22px 20px;
+        }
+        .stat-label {
+          margin: 0 0 8px;
+          color: var(--weathered-taupe);
+          font-size: 13px;
+          font-weight: 600;
+        }
+        .stat-value {
+          margin: 0;
+          font-family: 'Cormorant Garamond', Georgia, serif;
+          font-size: 52px;
+          font-weight: 600;
+          line-height: 1;
+          color: var(--charcoal-clay);
+        }
+        .table-wrap {
+          width: 100%;
+          overflow-x: auto;
+        }
+        @media (max-width: 640px) {
+          .stats-row { grid-template-columns: 1fr; }
+        }
+      `}</style>
     </div>
   );
 }
