@@ -12,8 +12,8 @@ export async function GET() {
 export async function POST(request: NextRequest) {
   const payload = (await request.json()) as Partial<Order>;
 
-  if (!payload.customer || !payload.productId) {
-    return jsonError("Customer name and product name are required.");
+  if (!payload.customer) {
+    return jsonError("Customer name is required.");
   }
 
   const orders = await readJsonFile<Order[]>("orders.json");
@@ -21,8 +21,10 @@ export async function POST(request: NextRequest) {
     id: payload.id || crypto.randomUUID(),
     customer: payload.customer,
     email: payload.email || "",
+    shipping: payload.shipping || "",
+    payment: payload.payment || "",
     productId: payload.productId || "",
-    productId: payload.productId,
+    productName: payload.productName || "",
     quantity: Number(payload.quantity || 1),
     total: Number(payload.total || 0),
     status: payload.status || "pending",
