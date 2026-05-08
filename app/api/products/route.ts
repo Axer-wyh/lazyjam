@@ -57,6 +57,10 @@ export async function PUT(request: NextRequest) {
     return jsonError("Product id is required.");
   }
 
+  if (!payload.name?.trim()) {
+    return jsonError("Product name is required.");
+  }
+
   const products = await readJsonFile<Product[]>("products.json");
   const exists = products.some((product) => product.id === payload.id);
 

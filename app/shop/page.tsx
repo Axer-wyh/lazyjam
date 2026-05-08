@@ -7,9 +7,10 @@ import type { Product } from "@/lib/types";
 
 const filters = [
   { value: "all", label: "全部" },
-  { value: "clay", label: "粘土手作" },
-  { value: "beads", label: "串珠首饰" },
-  { value: "mixed", label: "混合材质" }
+  { value: "Clay Earrings", label: "粘土手作" },
+  { value: "Bead Necklace", label: "串珠首饰" },
+  { value: "Bracelet", label: "手绑" },
+  { value: "Mixed Pair", label: "混合材质" },
 ];
 
 export default function ShopPage() {

@@ -14,7 +14,10 @@ export default function AdminLoginPage() {
       setError("请输入管理员密码");
       return;
     }
-    // Simple mock auth — any non-empty password works
+    if (password !== "lazyjam2024") {
+      setError("密码错误，请重试");
+      return;
+    }
     sessionStorage.setItem("lazyjam_admin_auth", "true");
     router.push("/admin");
   };
@@ -45,7 +48,7 @@ export default function AdminLoginPage() {
             登录
           </button>
         </form>
-        <p className="login-hint">演示模式：任意密码即可登录</p>
+        <p className="login-hint">请输入正确的管理员密码</p>
       </div>
 
       <style>{`

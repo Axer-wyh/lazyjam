@@ -1,12 +1,27 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { usePathname } from "next/navigation";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+
+function getPageTitle(pathname: string): string {
+  const map: Record<string, string> = {
+    "/admin": "页面管理",
+    "/admin/products": "商品管理",
+    "/admin/sections": "板块管理",
+    "/admin/pages": "页面编辑",
+    "/admin/orders": "订单管理",
+    "/admin/settings": "全局配置"
+  };
+  return map[pathname] ?? "Dashboard";
+}
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const [isAuthed, setIsAuthed] = useState(false);
   const [checking, setChecking] = useState(true);
+  const pathname = usePathname();
+  const { push } = useRouter();
 
   useEffect(() => {
     const auth = sessionStorage.getItem("lazyjam_admin_auth");
@@ -14,9 +29,9 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     setIsAuthed(authed);
     setChecking(false);
     if (!authed) {
-      window.location.href = "/admin/login";
+      push("/admin/login");
     }
-  }, []);
+  }, [push]);
 
   if (checking) return null;
 
@@ -29,19 +44,19 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           <span>LazyJam Admin</span>
         </div>
         <nav className="nav">
-          <Link href="/admin" className="nav-button">
+          <Link href="/admin" className={`nav-button${pathname === "/admin" ? " is-active" : ""}`}>
             <span className="nav-icon">P</span>页面管理
           </Link>
-          <Link href="/admin/sections" className="nav-button">
+          <Link href="/admin/sections" className={`nav-button${pathname === "/admin/sections" ? " is-active" : ""}`}>
             <span className="nav-icon">S</span>板块管理
           </Link>
-          <Link href="/admin/products" className="nav-button">
+          <Link href="/admin/products" className={`nav-button${pathname === "/admin/products" ? " is-active" : ""}`}>
             <span className="nav-icon">G</span>商品管理
           </Link>
-          <Link href="/admin/orders" className="nav-button">
+          <Link href="/admin/orders" className={`nav-button${pathname === "/admin/orders" ? " is-active" : ""}`}>
             <span className="nav-icon">O</span>订单管理
           </Link>
-          <Link href="/admin/settings" className="nav-button">
+          <Link href="/admin/settings" className={`nav-button${pathname === "/admin/settings" ? " is-active" : ""}`}>
             <span className="nav-icon">C</span>全局配置
           </Link>
         </nav>
@@ -63,7 +78,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       <div className="admin-main">
         <header className="topbar">
           <div>
-            <h1 className="page-title">Dashboard</h1>
+            <h1 className="page-title">{getPageTitle(pathname)}</h1>
             <p className="breadcrumb">LazyJam Admin</p>
           </div>
         </header>

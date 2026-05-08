@@ -16,6 +16,12 @@ export async function PUT(request: NextRequest) {
     return jsonError("Sections payload must be an array.");
   }
 
+  for (const section of payload) {
+    if (!section.id || !section.title) {
+      return jsonError("Section id and title are required for each item.");
+    }
+  }
+
   const normalized = payload
     .map((section, index) => ({
       ...section,

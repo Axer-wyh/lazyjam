@@ -1,4 +1,5 @@
 import type { Product } from "@/lib/types";
+import Link from "next/link";
 
 type ProductCardProps = {
   product: Product;
@@ -15,7 +16,8 @@ export default function ProductCard({ product }: ProductCardProps) {
   const isSoldOut = product.status === "sold_out" || product.inventory <= 0;
 
   return (
-    <article className="group">
+    <Link href={`/shop/${product.id}`} className="group block">
+      <article>
       <div className="ex-libris-frame overflow-hidden bg-parchment p-3">
         <img
           src={product.imageUrl}
@@ -38,5 +40,6 @@ export default function ProductCard({ product }: ProductCardProps) {
         <span>{isSoldOut ? "已售罄" : `库存 ${product.inventory}`}</span>
       </div>
     </article>
+    </Link>
   );
 }
