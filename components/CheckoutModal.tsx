@@ -338,7 +338,7 @@ function PaymentOption({
         cursor: "pointer",
         fontSize: 14, fontWeight: 600, color: "var(--charcoal-clay)",
         textAlign: "left",
-        transition: border-color 200ms ease, background 200ms ease,
+        transition: "border-color 200ms ease, background 200ms ease",
       }}
     >
       <span style={{ fontSize: 20 }}>{icon}</span>

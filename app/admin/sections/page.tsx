@@ -265,6 +265,7 @@ function SectionModal({
                 </select>
               </div>
             </div>
+          </div>
           <div className="modal-footer">
             <button className="admin-btn admin-btn-secondary" type="button" onClick={onClose}>取消</button>
             <button className="admin-btn" type="submit" disabled={saving}>{saving ? '保存中...' : '保存配置'}</button>
