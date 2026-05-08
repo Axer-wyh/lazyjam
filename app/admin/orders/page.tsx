@@ -133,7 +133,7 @@ export default function AdminOrdersPage() {
                   </button>
                 </td>
                 <td style={{ fontWeight: 700 }}>{order.customer}</td>
-                <td>${order.total}</td>
+                <td>¥{order.total}</td>
                 <td>
                   <span className={`status-badge status-${orderClass[order.status] ?? order.status}`}>
                     {statusLabels[order.status] ?? order.status}
@@ -199,7 +199,7 @@ function OrderDetailModal({
           <ul className="line-items">
             <li>
               <span>{order.productName} × {order.quantity}</span>
-              <strong>${order.total}</strong>
+              <strong>¥{order.total}</strong>
             </li>
           </ul>
           <dl style={{ display: "grid", gap: 12, margin: 0 }}>

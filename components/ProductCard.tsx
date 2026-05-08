@@ -1,5 +1,6 @@
 import type { Product } from "@/lib/types";
 import Link from "next/link";
+import { addToCart } from "@/lib/cart";
 
 type ProductCardProps = {
   product: Product;
@@ -14,6 +15,22 @@ const categoryLabel: Record<string, string> = {
 
 export default function ProductCard({ product }: ProductCardProps) {
   const isSoldOut = product.status === "sold_out" || product.inventory <= 0;
+
+  const handleAddToCart = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (isSoldOut) return;
+    addToCart({
+      id: product.id,
+      name: product.name,
+      price: product.price,
+      imageUrl: product.imageUrl,
+    });
+    // Visual feedback
+    const btn = e.currentTarget as HTMLButtonElement;
+    btn.textContent = "✓ 已加入";
+    setTimeout(() => { btn.textContent = "加入购物车"; }, 1800);
+  };
 
   return (
     <Link href={`/shop/${product.id}`} className="group block">
@@ -39,6 +56,37 @@ export default function ProductCard({ product }: ProductCardProps) {
         <span>{product.materials.join(" / ")}</span>
         <span>{isSoldOut ? "已售罄" : `库存 ${product.inventory}`}</span>
       </div>
+      {!isSoldOut && (
+        <button
+          className="add-to-cart-btn"
+          onClick={handleAddToCart}
+          type="button"
+        >
+          加入购物车
+        </button>
+      )}
+
+      <style>{`
+        .add-to-cart-btn {
+          margin-top: 12px;
+          width: 100%;
+          min-height: 38px;
+          border: 1px solid var(--charcoal-clay);
+          border-radius: 6px;
+          background: transparent;
+          color: var(--charcoal-clay);
+          font-size: 12px;
+          font-weight: 600;
+          letter-spacing: 0.1em;
+          text-transform: uppercase;
+          cursor: pointer;
+          transition: background-color 200ms ease, color 200ms ease;
+        }
+        .add-to-cart-btn:hover {
+          background: var(--charcoal-clay);
+          color: var(--raw-linen);
+        }
+      `}</style>
     </article>
     </Link>
   );

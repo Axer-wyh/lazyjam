@@ -80,7 +80,7 @@ export default function HomePage() {
                   <p className="product-meta">{product.category}</p>
                   <h3 className="card-title">{product.name}</h3>
                   <div className="product-bottom">
-                    <span className="price">${product.price}</span>
+                    <span className="price">¥{product.price}</span>
                     <button className="add-button" type="button" aria-label={`Add ${product.name} to cart`} onClick={bumpCart}>+</button>
                   </div>
                 </div>

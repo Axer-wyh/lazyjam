@@ -1,0 +1,18 @@
+{
+  "wechat": {
+    "enabled": false,
+    "qrCode": "",
+    "accountName": ""
+  },
+  "alipay": {
+    "enabled": false,
+    "qrCode": "",
+    "accountName": ""
+  },
+  "bankCard": {
+    "enabled": false,
+    "bankName": "",
+    "accountNumber": "",
+    "accountName": ""
+  }
+}

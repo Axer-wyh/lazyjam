@@ -177,6 +177,22 @@ function SectionModal({
   const [subtitle, setSubtitle] = useState(section.subtitle);
   const [description, setDescription] = useState(section.description);
   const [imageUrl, setImageUrl] = useState(section.imageUrl);
+  const [imagePreview, setImagePreview] = useState(section.imageUrl);
+
+  const handleImageFile = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 512000) {
+      alert("图片建议小于 500KB，当前图片可能较大，上传后可能导致数据文件过大。");
+    }
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      const result = ev.target?.result as string;
+      setImageUrl(result);
+      setImagePreview(result);
+    };
+    reader.readAsDataURL(file);
+  };
   const [href, setHref] = useState(section.href);
   const [ctaLabel, setCtaLabel] = useState(section.ctaLabel);
   const [order, setOrder] = useState(section.order);
@@ -199,10 +215,24 @@ function SectionModal({
             <div style={{ marginBottom: 14 }}>
               <p className="admin-label" style={{ marginBottom: 8 }}>当前背景图</p>
               <div className="admin-thumb" style={{ width: '100%', height: 180, borderRadius: 6 }}>
-                <img src={imageUrl} alt={title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                <img src={imagePreview} alt={title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+              </div>
+              <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginTop: 8, flexWrap: 'wrap' }}>
+                <label className="admin-btn admin-btn-secondary" style={{ cursor: 'pointer' }}>
+                  选择本地图片
+                  <input type="file" accept="image/*" onChange={handleImageFile} style={{ display: 'none' }} />
+                </label>
+                <span style={{ fontSize: 12, color: 'var(--weathered-taupe)' }}>或</span>
+                <input
+                  className="admin-input"
+                  value={imageUrl}
+                  onChange={(e) => { setImageUrl(e.target.value); setImagePreview(e.target.value); }}
+                  placeholder="粘贴图片 URL"
+                  style={{ flex: 1, minWidth: 200 }}
+                />
               </div>
             </div>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14, marginTop: 4 }}>
               <div className="field" style={{ gridColumn: '1/-1' }}>
                 <label className="admin-label">板块标题</label>
                 <input className="admin-input" value={title} onChange={(e) => setTitle(e.target.value)} />
@@ -214,10 +244,6 @@ function SectionModal({
               <div className="field" style={{ gridColumn: '1/-1' }}>
                 <label className="admin-label">描述</label>
                 <textarea className="admin-textarea" value={description} onChange={(e) => setDescription(e.target.value)} rows={3} />
-              </div>
-              <div className="field" style={{ gridColumn: '1/-1' }}>
-                <label className="admin-label">背景图 URL（粘贴图片地址）</label>
-                <input className="admin-input" value={imageUrl} onChange={(e) => setImageUrl(e.target.value)} placeholder="https://images.unsplash.com/..." />
               </div>
               <div className="field">
                 <label className="admin-label">链接 URL</label>
@@ -239,7 +265,6 @@ function SectionModal({
                 </select>
               </div>
             </div>
-          </div>
           <div className="modal-footer">
             <button className="admin-btn admin-btn-secondary" type="button" onClick={onClose}>取消</button>
             <button className="admin-btn" type="submit" disabled={saving}>{saving ? '保存中...' : '保存配置'}</button>

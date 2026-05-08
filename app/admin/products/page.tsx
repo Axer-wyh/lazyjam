@@ -202,6 +202,23 @@ function ProductModal({
   const [note, setNote] = useState(product?.note ?? "");
   const [tags, setTags] = useState<string[]>(product?.tags ?? []);
   const [imageUrl, setImageUrl] = useState(product?.imageUrl ?? "");
+  const [imagePreview, setImagePreview] = useState(product?.imageUrl ?? "");
+
+  const handleImageFile = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    // Limit to ~500KB by checking size; warn if larger
+    if (file.size > 512000) {
+      alert("图片建议小于 500KB，当前图片可能较大，上传后可能导致数据文件过大。");
+    }
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      const result = ev.target?.result as string;
+      setImageUrl(result);
+      setImagePreview(result);
+    };
+    reader.readAsDataURL(file);
+  };
   const [description, setDescription] = useState(product?.description ?? "");
   const [materialsInput, setMaterialsInput] = useState(product?.materials?.join(", ") ?? "");
   const [featured, setFeatured] = useState(product?.featured ?? false);
@@ -243,21 +260,31 @@ function ProductModal({
         </div>
         <form onSubmit={handleSubmit}>
           <div className="modal-body">
-            {/* Image preview + URL input */}
+            {/* Image preview + file upload */}
             <div style={{ marginBottom: 14 }}>
               <p className="admin-label" style={{ marginBottom: 8 }}>商品图片</p>
-              {imageUrl && (
+              {imagePreview && (
                 <div className="admin-thumb" style={{ width: 120, height: 120, marginBottom: 8, borderRadius: 6, overflow: "hidden" }}>
-                  <img src={imageUrl} alt={name} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                  <img src={imagePreview} alt={name} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
                 </div>
               )}
-              <input
-                className="admin-input"
-                value={imageUrl}
-                onChange={(e) => setImageUrl(e.target.value)}
-                placeholder="粘贴图片 URL https://images.unsplash.com/..."
-                style={{ width: "100%" }}
-              />
+              <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
+                <label className="admin-btn admin-btn-secondary" style={{ cursor: "pointer" }}>
+                  选择本地图片
+                  <input type="file" accept="image/*" onChange={handleImageFile} style={{ display: "none" }} />
+                </label>
+                <span style={{ fontSize: 12, color: "var(--weathered-taupe)" }}>或</span>
+                <input
+                  className="admin-input"
+                  value={imageUrl}
+                  onChange={(e) => { setImageUrl(e.target.value); setImagePreview(e.target.value); }}
+                  placeholder="粘贴图片 URL"
+                  style={{ flex: 1, minWidth: 200 }}
+                />
+              </div>
+              <p style={{ marginTop: 6, fontSize: 11, color: "var(--weathered-taupe)" }}>
+                支持 JPG/PNG，建议图片小于 500KB
+              </p>
             </div>
 
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>

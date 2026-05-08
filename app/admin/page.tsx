@@ -63,7 +63,7 @@ export default function AdminDashboard() {
                 <tr key={order.id}>
                   <td style={{ fontFamily: "monospace", fontSize: 13 }}>{order.id}</td>
                   <td style={{ fontWeight: 700 }}>{order.customer}</td>
-                  <td>${order.total}</td>
+                  <td>¥{order.total}</td>
                   <td>
                     <span className={`status-badge status-${order.status}`}>
                       {order.status === "pending" ? "待付款" :

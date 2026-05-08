@@ -59,6 +59,9 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           <Link href="/admin/settings" className={`nav-button${pathname === "/admin/settings" ? " is-active" : ""}`}>
             <span className="nav-icon">C</span>全局配置
           </Link>
+          <Link href="/admin/payments" className={`nav-button${pathname === "/admin/payments" ? " is-active" : ""}`}>
+            <span className="nav-icon">¥</span>支付管理
+          </Link>
         </nav>
         <div className="sidebar-footer">
           <button
@@ -77,10 +80,21 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       {/* Main content */}
       <div className="admin-main">
         <header className="topbar">
-          <div>
-            <h1 className="page-title">{getPageTitle(pathname)}</h1>
-            <p className="breadcrumb">LazyJam Admin</p>
+          <div className="topbar-logo">
+            <span className="topbar-logo-mark">LJ</span>
+            <span className="topbar-logo-name">LazyJam Admin</span>
           </div>
+          <h1 className="topbar-title">{getPageTitle(pathname)}</h1>
+          <button
+            className="topbar-logout"
+            type="button"
+            onClick={() => {
+              sessionStorage.removeItem("lazyjam_admin_auth");
+              window.location.href = "/admin/login";
+            }}
+          >
+            <span aria-hidden>↩</span> 退出登录
+          </button>
         </header>
         <main className="content">{children}</main>
       </div>
@@ -207,18 +221,66 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           background: rgba(243,239,230,0.9);
           backdrop-filter: blur(12px);
         }
-        .page-title {
+        .topbar {
+          position: sticky;
+          top: 0;
+          z-index: 15;
+          min-height: 78px;
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 18px;
+          padding: 14px 26px;
+          border-bottom: 1px solid rgba(201,191,175,0.62);
+          background: #F5F0E8;
+        }
+        .topbar-logo {
+          display: flex;
+          align-items: center;
+          gap: 10px;
+          font-family: 'Cormorant Garamond', Georgia, serif;
+          font-size: 1.2rem;
+          font-weight: 700;
+          color: var(--charcoal-clay);
+          white-space: nowrap;
+        }
+        .topbar-logo-mark {
+          width: 34px;
+          height: 34px;
+          border: 1px solid var(--charcoal-clay);
+          border-radius: 50%;
+          font-family: 'Inter', system-ui, sans-serif;
+          font-size: 12px;
+          font-weight: 700;
+          display: grid;
+          place-items: center;
+        }
+        .topbar-title {
           margin: 0;
           font-family: 'Cormorant Garamond', Georgia, serif;
-          font-size: clamp(26px, 4vw, 38px);
+          font-size: clamp(20px, 3vw, 32px);
           line-height: 1;
           font-weight: 700;
           color: var(--charcoal-clay);
+          text-align: center;
         }
-        .breadcrumb {
-          margin: 7px 0 0;
-          color: var(--weathered-taupe);
-          font-size: 12px;
+        .topbar-logout {
+          display: flex;
+          align-items: center;
+          gap: 7px;
+          border: 1px solid rgba(61,47,42,0.3);
+          border-radius: 6px;
+          background: transparent;
+          color: var(--charcoal-clay);
+          padding: 8px 16px;
+          font-weight: 600;
+          font-size: 13px;
+          cursor: pointer;
+          white-space: nowrap;
+          transition: background-color 180ms ease;
+        }
+        .topbar-logout:hover {
+          background: rgba(61,47,42,0.08);
         }
         .content {
           padding: 24px 26px 36px;
