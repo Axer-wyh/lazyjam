@@ -1,16 +1,18 @@
 import { NextRequest } from "next/server";
-import { jsonError, readJsonFile, writeJsonFile } from "@/lib/data-store";
-import type { Section } from "@/lib/types";
+import { prisma } from "@/lib/prisma";
+import { jsonError } from "@/lib/data-store";
 
 export const dynamic = "force-dynamic";
 
 export async function GET() {
-  const sections = await readJsonFile<Section[]>("sections.json");
-  return Response.json(sections.sort((a, b) => a.order - b.order));
+  const sections = await prisma.section.findMany({
+    orderBy: { order: "asc" },
+  });
+  return Response.json(sections);
 }
 
 export async function PUT(request: NextRequest) {
-  const payload = (await request.json()) as Section[];
+  const payload = await request.json();
 
   if (!Array.isArray(payload)) {
     return jsonError("Sections payload must be an array.");
@@ -22,14 +24,36 @@ export async function PUT(request: NextRequest) {
     }
   }
 
-  const normalized = payload
-    .map((section, index) => ({
-      ...section,
-      order: Number(section.order || index + 1),
-      isActive: Boolean(section.isActive)
-    }))
-    .sort((a, b) => a.order - b.order);
+  // Upsert each section
+  for (const section of payload) {
+    await prisma.section.upsert({
+      where: { id: section.id },
+      update: {
+        type: section.type,
+        title: section.title,
+        subtitle: section.subtitle || null,
+        description: section.description || null,
+        imageUrl: section.imageUrl || null,
+        href: section.href || null,
+        ctaLabel: section.ctaLabel || null,
+        order: Number(section.order || 0),
+        isActive: Boolean(section.isActive),
+      },
+      create: {
+        id: section.id,
+        type: section.type,
+        title: section.title,
+        subtitle: section.subtitle || null,
+        description: section.description || null,
+        imageUrl: section.imageUrl || null,
+        href: section.href || null,
+        ctaLabel: section.ctaLabel || null,
+        order: Number(section.order || 0),
+        isActive: Boolean(section.isActive),
+      },
+    });
+  }
 
-  const saved = await writeJsonFile("sections.json", normalized);
-  return Response.json(saved);
+  const sections = await prisma.section.findMany({ orderBy: { order: "asc" } });
+  return Response.json(sections);
 }

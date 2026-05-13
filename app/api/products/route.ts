@@ -1,57 +1,50 @@
 import { NextRequest } from "next/server";
-import { jsonError, readJsonFile, writeJsonFile } from "@/lib/data-store";
-import type { Product } from "@/lib/types";
+import { prisma } from "@/lib/prisma";
+import { jsonError } from "@/lib/data-store";
 
 export const dynamic = "force-dynamic";
 
-const emptyProduct: Omit<Product, "id" | "createdAt"> = {
-  name: "",
-  category: "clay",
-  price: 0,
-  imageUrl: "/images/product-placeholder.jpg",
-  description: "",
-  materials: [],
-  inventory: 0,
-  featured: false,
-  stockTag: "Small Batch",
-  cycle: "5-7 days",
-  material: "",
-  size: "",
-  care: "",
-  note: "",
-  tags: [],
-  status: "draft"
-};
-
 export async function GET() {
-  const products = await readJsonFile<Product[]>("products.json");
+  const products = await prisma.product.findMany({
+    orderBy: { createdAt: "desc" },
+  });
   return Response.json(products);
 }
 
 export async function POST(request: NextRequest) {
-  const payload = (await request.json()) as Partial<Product>;
+  const payload = await request.json();
 
   if (!payload.name) {
     return jsonError("Product name is required.");
   }
 
-  const products = await readJsonFile<Product[]>("products.json");
-  const product: Product = {
-    ...emptyProduct,
-    ...payload,
-    id: payload.id || crypto.randomUUID(),
-    price: Number(payload.price || 0),
-    inventory: Number(payload.inventory || 0),
-    materials: Array.isArray(payload.materials) ? payload.materials : [],
-    createdAt: new Date().toISOString()
-  };
+  const product = await prisma.product.create({
+    data: {
+      id: payload.id || undefined,
+      name: payload.name,
+      category: payload.category || "Clay Earrings",
+      price: Number(payload.price || 0),
+      imageUrl: payload.imageUrl || "/images/product-placeholder.jpg",
+      description: payload.description || null,
+      materials: Array.isArray(payload.materials) ? payload.materials : [],
+      inventory: Number(payload.inventory || 0),
+      featured: Boolean(payload.featured),
+      status: payload.status || "draft",
+      stockTag: payload.stockTag || null,
+      cycle: payload.cycle || null,
+      material: payload.material || null,
+      size: payload.size || null,
+      care: payload.care || null,
+      note: payload.note || null,
+      tags: Array.isArray(payload.tags) ? payload.tags : [],
+    },
+  });
 
-  const saved = await writeJsonFile("products.json", [product, ...products]);
-  return Response.json(saved);
+  return Response.json(product);
 }
 
 export async function PUT(request: NextRequest) {
-  const payload = (await request.json()) as Product;
+  const payload = await request.json();
 
   if (!payload.id) {
     return jsonError("Product id is required.");
@@ -61,27 +54,29 @@ export async function PUT(request: NextRequest) {
     return jsonError("Product name is required.");
   }
 
-  const products = await readJsonFile<Product[]>("products.json");
-  const exists = products.some((product) => product.id === payload.id);
+  const product = await prisma.product.update({
+    where: { id: payload.id },
+    data: {
+      name: payload.name,
+      category: payload.category,
+      price: Number(payload.price || 0),
+      imageUrl: payload.imageUrl,
+      description: payload.description || null,
+      materials: Array.isArray(payload.materials) ? payload.materials : [],
+      inventory: Number(payload.inventory || 0),
+      featured: Boolean(payload.featured),
+      status: payload.status || "active",
+      stockTag: payload.stockTag || null,
+      cycle: payload.cycle || null,
+      material: payload.material || null,
+      size: payload.size || null,
+      care: payload.care || null,
+      note: payload.note || null,
+      tags: Array.isArray(payload.tags) ? payload.tags : [],
+    },
+  });
 
-  if (!exists) {
-    return jsonError("Product not found.", 404);
-  }
-
-  const nextProducts = products.map((product) =>
-    product.id === payload.id
-      ? {
-          ...product,
-          ...payload,
-          price: Number(payload.price || 0),
-          inventory: Number(payload.inventory || 0),
-          materials: Array.isArray(payload.materials) ? payload.materials : []
-        }
-      : product
-  );
-
-  const saved = await writeJsonFile("products.json", nextProducts);
-  return Response.json(saved);
+  return Response.json(product);
 }
 
 export async function DELETE(request: NextRequest) {
@@ -91,11 +86,6 @@ export async function DELETE(request: NextRequest) {
     return jsonError("Product id is required.");
   }
 
-  const products = await readJsonFile<Product[]>("products.json");
-  const saved = await writeJsonFile(
-    "products.json",
-    products.filter((product) => product.id !== id)
-  );
-
-  return Response.json(saved);
+  await prisma.product.delete({ where: { id } });
+  return Response.json({ success: true });
 }

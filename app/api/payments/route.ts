@@ -1,5 +1,6 @@
 import { NextRequest } from "next/server";
-import { jsonError, readJsonFile, writeJsonFile } from "@/lib/data-store";
+import { prisma } from "@/lib/prisma";
+import { jsonError } from "@/lib/data-store";
 
 export const dynamic = "force-dynamic";
 
@@ -21,24 +22,31 @@ export interface PaymentConfig {
 }
 
 export async function GET() {
-  try {
-    const config = await readJsonFile<PaymentConfig>("payments.json");
-    return Response.json(config);
-  } catch {
+  const record = await prisma.paymentConfig.findUnique({
+    where: { id: "payment" },
+  });
+
+  if (!record) {
     return Response.json({
       wechat: { enabled: false, qrCode: "", accountName: "" },
       alipay: { enabled: false, qrCode: "", accountName: "" },
       bankCard: { enabled: false, bankName: "", accountNumber: "", accountName: "" },
     });
   }
+
+  return Response.json(record.config);
 }
 
 export async function PUT(request: NextRequest) {
-  const payload = (await request.json()) as PaymentConfig;
+  const payload = await request.json();
 
   try {
-    const saved = await writeJsonFile("payments.json", payload);
-    return Response.json(saved);
+    await prisma.paymentConfig.upsert({
+      where: { id: "payment" },
+      update: { config: payload },
+      create: { id: "payment", config: payload },
+    });
+    return Response.json(payload);
   } catch {
     return jsonError("Failed to save payment config.", 500);
   }
