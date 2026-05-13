@@ -15,7 +15,7 @@ const categoryLabel: Record<string, string> = {
 
 export default function ProductDetailPage() {
   const params = useParams();
-  const id = params.id as string;
+  const id = params?.id as string;
   const [product, setProduct] = useState<Product | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -65,7 +65,9 @@ export default function ProductDetailPage() {
   const isSoldOut = product.status === "sold_out" || product.inventory <= 0;
 
   return (
-    <section className="mx-auto max-w-7xl px-4 py-14 sm:px-6 lg:px-8">
+    <>
+      <div style={{ height: "var(--header-height)" }} />
+      <section className="mx-auto max-w-7xl px-4 py-14 sm:px-6 lg:px-8">
       <div className="mb-8">
         <a href="/shop" className="inline-flex items-center gap-2 text-sm text-charcoal/60 hover:text-charcoal">
           ← 返回商店

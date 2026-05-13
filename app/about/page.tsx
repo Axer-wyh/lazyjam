@@ -6,7 +6,7 @@ export default function AboutPage() {
           <p className="text-xs font-semibold uppercase tracking-[0.22em] text-persimmon">About</p>
           <h1 className="mt-4 font-serif text-5xl font-semibold text-charcoal sm:text-7xl">Hands, texture, patience.</h1>
         </div>
-        <div className="space-y-7 text-base leading-8 text-charcoal/72">
+        <div className="space-y-7 text-base leading-relaxed text-charcoal/72">
           <p>
             LazyJam 从粘土和珠子开始。我们喜欢材料自然留下的痕迹：被手指推开的边缘、烧制后细小的色差、串珠间轻微的节奏变化。
           </p>

@@ -84,7 +84,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             <span className="topbar-logo-mark">LJ</span>
             <span className="topbar-logo-name">LazyJam Admin</span>
           </div>
-          <h1 className="topbar-title">{getPageTitle(pathname)}</h1>
+          <h1 className="topbar-title">{getPageTitle(pathname ?? '')}</h1>
           <button
             className="topbar-logout"
             type="button"
