@@ -63,7 +63,7 @@ export default function AdminLoginPage() {
           width: min(420px, 100%);
           border: 1px solid rgba(201,191,175,0.72);
           border-radius: 12px;
-          background: rgba(255,252,245,0.74);
+          background: rgba(255,252,245,1);
           box-shadow: 0 24px 80px rgba(46,42,37,0.14);
           padding: 36px 32px;
         }

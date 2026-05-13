@@ -423,3 +423,8 @@ img {
   opacity: 1;
   transform: translateY(0);
 }
+
+/* ── About page ───────────────────────────────────── */
+.soft-paper {
+  background: var(--raw-linen);
+}

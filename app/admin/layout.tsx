@@ -221,19 +221,6 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           background: rgba(243,239,230,0.9);
           backdrop-filter: blur(12px);
         }
-        .topbar {
-          position: sticky;
-          top: 0;
-          z-index: 15;
-          min-height: 78px;
-          display: flex;
-          align-items: center;
-          justify-content: space-between;
-          gap: 18px;
-          padding: 14px 26px;
-          border-bottom: 1px solid rgba(201,191,175,0.62);
-          background: #F5F0E8;
-        }
         .topbar-logo {
           display: flex;
           align-items: center;
