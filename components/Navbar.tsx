@@ -48,7 +48,7 @@ export default function Navbar() {
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
-  const textColor = isLight && isScrolled ? "var(--charcoal-clay)" : "var(--raw-linen)";
+  const textColor = isLight ? "var(--charcoal-clay)" : (isScrolled ? "var(--charcoal-clay)" : "var(--raw-linen)");
 
   const openCart = () => setCartOpen(true);
   const closeCart = () => setCartOpen(false);
