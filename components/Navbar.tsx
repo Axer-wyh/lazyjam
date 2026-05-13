@@ -92,18 +92,9 @@ export default function Navbar() {
           <span className="cart-count" data-cart-count>0</span>
         </button>
 
-        <CartDrawer
-          isOpen={cartOpen}
-          onClose={closeCart}
-          onCheckout={handleCheckout}
-        />
-        <CheckoutModal
-          isOpen={checkoutOpen}
-          cart={cart}
-          total={cart.reduce((s, i) => s + i.price * i.quantity, 0)}
-          onClose={() => setCheckoutOpen(false)}
-          onSuccess={handleCheckoutSuccess}
-        />
+      {/* Cart and Checkout are portal-rendered outside header stacking context */}
+        {cartOpen && <CartDrawer isOpen={cartOpen} onClose={closeCart} onCheckout={handleCheckout} />}
+        {checkoutOpen && <CheckoutModal isOpen={checkoutOpen} cart={cart} total={cart.reduce((s, i) => s + i.price * i.quantity, 0)} onClose={() => setCheckoutOpen(false)} onSuccess={handleCheckoutSuccess} />}
       </div>
 
       <style>{`
@@ -121,7 +112,7 @@ export default function Navbar() {
         .site-header:not(.is-scrolled) {
           background: transparent;
           border-bottom-color: rgba(243,239,230,0.2);
-          color: var(--raw-linen);
+          color: var(--charcoal-clay);
         }
         .site-header.is-scrolled {
           height: var(--header-compact);

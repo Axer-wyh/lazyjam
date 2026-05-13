@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import { apiRequest } from "@/lib/client-api";
+import { addToCart } from "@/lib/cart";
 import type { Product } from "@/lib/types";
 
 const categoryLabel: Record<string, string> = {
@@ -18,6 +19,7 @@ export default function ProductDetailPage() {
   const [product, setProduct] = useState<Product | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [addedToCart, setAddedToCart] = useState(false);
 
   useEffect(() => {
     if (!id) return;
@@ -33,6 +35,13 @@ export default function ProductDetailPage() {
       .catch(() => setError("加载失败"))
       .finally(() => setLoading(false));
   }, [id]);
+
+  const handleAddToCart = () => {
+    if (!product || isSoldOut) return;
+    addToCart({ id: product.id, name: product.name, price: product.price, imageUrl: product.imageUrl });
+    setAddedToCart(true);
+    setTimeout(() => setAddedToCart(false), 2000);
+  };
 
   if (loading) {
     return (
@@ -145,6 +154,27 @@ export default function ProductDetailPage() {
               </h2>
               <p className="mt-3 leading-7 text-charcoal/80">{product.note}</p>
             </div>
+          )}
+
+          {/* Action buttons */}
+          {!isSoldOut ? (
+            <div className="mt-8 flex gap-3">
+              <button
+                onClick={handleAddToCart}
+                className="flex-1 min-h-[48px] rounded-lg border border-charcoal-clay bg-transparent text-charcoal-clay font-semibold text-sm tracking-wide transition-colors hover:bg-charcoal-clay hover:text-raw-linen"
+                type="button"
+              >
+                {addedToCart ? "✓ 已加入购物车" : "加入购物车"}
+              </button>
+              <a
+                href="/shop"
+                className="flex-1 min-h-[48px] rounded-lg bg-charcoal-clay text-raw-linen font-semibold text-sm tracking-wide flex items-center justify-center transition-opacity hover:opacity-80"
+              >
+                继续逛逛
+              </a>
+            </div>
+          ) : (
+            <div className="mt-8 py-4 text-center text-sm text-charcoal/45">此商品已售罄</div>
           )}
         </div>
       </div>
